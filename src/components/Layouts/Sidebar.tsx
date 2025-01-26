@@ -31,8 +31,9 @@ import IconMenuUsers from '../Icon/Menu/IconMenuUsers';
 import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuAuthentication from '../Icon/Menu/IconMenuAuthentication';
 import IconMenuDocumentation from '../Icon/Menu/IconMenuDocumentation';
-
+import { route } from '../../utils/RouteHelper';
 const Sidebar = () => {
+
     const [currentMenu, setCurrentMenu] = useState<string>('');
     const [errorSubMenu, setErrorSubMenu] = useState(false);
     const themeConfig = useSelector((state: IRootState) => state.themeConfig);
@@ -148,10 +149,38 @@ const Sidebar = () => {
                                 <AnimateHeight duration={300} height={currentMenu === 'category' ? 'auto' : 0}>
                                     <ul className="sub-menu text-gray-500">
                                         <li>
-                                            <NavLink to="/components/tabs">Kategori Listesi</NavLink>
+                                            <NavLink to={route('CategoryList')}>Kategori Listesi</NavLink>
                                         </li>
                                         <li>
-                                            <NavLink to="/kategori-ekle">Kategori Ekleme</NavLink>
+                                            <NavLink to={route('CategoryAdd')}>Kategori Ekleme</NavLink>
+                                        </li>
+                                    </ul>
+                                </AnimateHeight>
+                            </li>
+                            <li className="menu nav-item">
+                                <button type="button"
+                                        className={`${currentMenu === 'tag' ? 'active' : ''} nav-link group w-full`}
+                                        onClick={() => toggleMenu('tag')}>
+                                    <div className="flex items-center">
+                                        <IconMenuComponents className="group-hover:!text-primary shrink-0" />
+                                        <span
+                                            className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                            Etiket(Tag) Yönetimi
+                                        </span>
+                                    </div>
+
+                                    <div className={currentMenu !== 'tag' ? 'rtl:rotate-90 -rotate-90' : ''}>
+                                        <IconCaretDown />
+                                    </div>
+                                </button>
+
+                                <AnimateHeight duration={300} height={currentMenu === 'tag' ? 'auto' : 0}>
+                                    <ul className="sub-menu text-gray-500">
+                                        <li>
+                                            <NavLink to={route('TagList')}>Etiket Listesi</NavLink>
+                                        </li>
+                                        <li>
+                                            <NavLink to={route('TagAdd')}>Etiket Ekleme</NavLink>
                                         </li>
                                     </ul>
                                 </AnimateHeight>
