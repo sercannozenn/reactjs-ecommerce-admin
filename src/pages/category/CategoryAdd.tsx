@@ -1,22 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
-import { useState } from 'react';
-const options = [
-    { value: 'chocolate', label: 'Chocolate' },
-    { value: 'strawberry', label: 'Strawberry' },
-    { value: 'vanilla', label: 'Vanilla' }
-];
+import api from '../../api/api';
+
 const animatedComponents = makeAnimated();
-const [parentCategory, setParentCategory] = useState('');
-const [slug, setSlug] = useState('');
-const [name, setName] = useState('');
-const [description, setDescription] = useState('');
-const [tags, setTags] = useState([]);
-const [isActive, setIsActive] = useState(true);
-const [keywords, setKeywords] = useState('');
-const [seoDescription, setSeoDescription] = useState('');
-const [author, setAuthor] = useState('');
+type Tag = {
+    id: number;
+    name: string;
+};
+type Category = {
+    id: number;
+    name: string;
+};
 const customNoOptionsMessage = () => {
     return (
         <div style={{ textAlign: 'center', color: 'gray' }}>
@@ -24,7 +19,56 @@ const customNoOptionsMessage = () => {
         </div>
     );
 };
+
 const CategoryAdd = () => {
+    const [formData, setFormData] = useState({
+        parentCategory: '',
+        slug: '',
+        name: '',
+        description: '',
+        tags: [],
+        isActive: true,
+        keywords: '',
+        seoDescription: '',
+        author: ''
+    });
+    const [categories, setCategories] = useState([]); // Üst kategoriler
+    const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
+
+    useEffect(() => {
+        // category/create endpoint'ine istek at
+        const fetchCreateData = async () => {
+            try {
+                const response = await api.get('/admin/category/create');
+                setCategories(response.data.data.categories || []); // Gelen kategoriler
+                setTagsOptions(response.data.data.tags.map((tag:Tag) => ({ value: tag.id, label: tag.name }))); // Etiketleri dönüştür
+            } catch (error) {
+                console.error('Veriler alınırken hata oluştu:', error);
+            }
+        };
+
+        fetchCreateData();
+    }, []);
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
+    const handleSelectChange = (selectedOptions: any) => {
+        setFormData({ ...formData, tags: selectedOptions });
+    };
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        console.log(formData);
+        try {
+            const response = await api.post('/admin/category', formData);
+            alert(`Kategori başarıyla eklendi! ID: ${response.data.id}`);
+        } catch (error: any) {
+            console.error(error);
+            alert(
+                error.response?.data?.message || 'Bir hata oluştu! Lütfen tekrar deneyin.'
+            );
+        }
+    };
 
     return (
         <div className="">
@@ -34,47 +78,73 @@ const CategoryAdd = () => {
                         Kategori Ekleme
                     </h5>
                 </div>
-                <form className="grid xl:grid-cols-2 gap-6 grid-cols-1">
+                <form className="grid xl:grid-cols-2 gap-6 grid-cols-1" onSubmit={handleSubmit}>
                     <div className="mb-5">
-                        <select className="form-select text-white-dark">
+                        <select className="form-select text-white-dark"
+                                name="parentCategory"
+                                onChange={handleInputChange}
+                                value={formData.parentCategory}>
                             <option>Üst Kategori</option>
-                            <option>One</option>
-                            <option>Two</option>
-                            <option>Three</option>
+                            {categories.map((category: Category) => (
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
+                            ))}
                         </select>
                         <span className="badge bg-info block text-xs hover:top-0">
                             Kategorinin bir üst kategorisi varsa seçiniz.
                         </span>
                     </div>
                     <div className="mb-5">
-                        <input type="text" placeholder="Kategori Slug Adı" className="form-input" />
+                        <input type="text" placeholder="Kategori Slug Adı" className="form-input"
+                               name="slug"
+                               value={formData.slug}
+                               onChange={handleInputChange}
+                        />
                         <span className="badge bg-info block text-xs hover:top-0">
                             Kategori sayfasına gidildiğinde URL'de görünmesiniistediğiniz isim.
                         </span>
 
                     </div>
                     <div className="mb-5">
-                        <input type="text" placeholder="Kategori Adı *" className="form-input" required />
+                        <input type="text" placeholder="Kategori Adı *" className="form-input" required
+                               name="name"
+                               value={formData.name}
+                               onChange={handleInputChange}
+                        />
                     </div>
                     <div className="mb-5">
-                        <input type="text" placeholder="Kategori Kısa Açıklama" className="form-input" />
+                        <input type="text" placeholder="Kategori Kısa Açıklama" className="form-input"
+                               name="description"
+                               value={formData.description}
+                               onChange={handleInputChange}
+                        />
                     </div>
                     <div className="mb-5">
                         <Select
-                            defaultValue={[options[1], options[2]]}
+                            defaultValue={formData.tags}
                             isMulti
                             components={{ ...animatedComponents, NoOptionsMessage: customNoOptionsMessage }}
-                            name="colors"
-                            options={options}
+                            options={tagsOptions}
                             className="basic-multi-select"
                             placeholder="Ürün Etiketi"
                             classNamePrefix="select"
+                            name="tags"
+                            onChange={handleSelectChange}
+
+
                         />
                     </div>
                     <div className="mb-5"></div>
                     <div className="">
                         <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" className="form-checkbox text-info" defaultChecked />
+                            <input type="checkbox" className="form-checkbox text-info"
+                                   name="isActive"
+                                   checked={formData.isActive}
+                                   onChange={(e) =>
+                                       setFormData({ ...formData, isActive: e.target.checked })
+                                   }
+                            />
                             <span className=" text-white-dark">Aktif</span>
                         </label>
                     </div>
@@ -88,14 +158,26 @@ const CategoryAdd = () => {
                         </div>
                         <div className="grid xl:grid-cols-3 gap-6 grid-cols-1">
                             <div className="mb-5">
-                                <input type="text" placeholder="Anahtar Kelimeler" className="form-input" />
+                                <input type="text" placeholder="Anahtar Kelimeler" className="form-input"
+                                       name="keywords"
+                                       value={formData.keywords}
+                                       onChange={handleInputChange}
+                                />
                             </div>
                             <div className="mb-5">
                                 <input type="text" placeholder="Kategori Hakkında Seo Açıklaması"
-                                       className="form-input" />
+                                       className="form-input"
+                                       name="seoDescription"
+                                       value={formData.seoDescription}
+                                       onChange={handleInputChange}
+                                />
                             </div>
                             <div className="mb-5">
-                                <input type="text" placeholder="Yazar Bilgisi" className="form-input" />
+                                <input type="text" placeholder="Yazar Bilgisi" className="form-input"
+                                       name="author"
+                                       value={formData.author}
+                                       onChange={handleInputChange}
+                                />
                             </div>
                         </div>
                     </div>
@@ -104,8 +186,8 @@ const CategoryAdd = () => {
                     <div className="col-span-2">
                         <hr className="my-5 border-gray-300" />
                         <div className="flex justify-center">
-                        <button type="button" className="btn btn-info hover:btn-success w-full">
-                            KAYDET
+                            <button type="submit" className="btn btn-info hover:btn-success w-full">
+                                KAYDET
                             </button>
                         </div>
 

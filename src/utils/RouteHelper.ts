@@ -1,9 +1,9 @@
 import { routes } from '../router/routes';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
-export const getRoutePath = (
+export const route = (
     name: string,
-    params?: Record<string, string | number>
+    params?: Record<string, any>
 ): string => {
     const route = routes.find((r) => r.name === name);
 
@@ -24,9 +24,9 @@ export const getRoutePath = (
 };
 
 export const useRouteNavigator = () => {
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
-    const navigateToRoute = (name: string, params?: Record<string, string | number>): void => {
+    const navigateToRoute = (name: string, params?: Record<string, any>): void => {
         const route = routes.find((r) => r.name === name);
 
         if (!route) {
@@ -43,7 +43,8 @@ export const useRouteNavigator = () => {
         }
 
         // Yönlendirme işlemi
-        navigate(path);
+        window.location.href = path; // veya başka bir yönlendirme yöntemi
+        // navigate(path);
     };
 
     return navigateToRoute;
