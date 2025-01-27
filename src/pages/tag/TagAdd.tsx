@@ -1,22 +1,49 @@
 import React, { useEffect, useState } from 'react';
-import api from '../../api/api';
+import { TagService } from '../../api/services/TagService';
+import { useParams } from 'react-router-dom';
+import { setPageTitle } from '../../store/themeConfigSlice';
+import { useDispatch } from 'react-redux';
 
 const TagAdd = () => {
+    const dispatch = useDispatch();
+
     const [formData, setFormData] = useState({
-        slug: '',
         name: '',
+        slug: '',
     });
+    const { id } = useParams<{id: string}>(); // id urlden alınır.
+    const [isEdit, setIsEdit] = useState(false);
+
+    useEffect(() => {
+        dispatch(setPageTitle('Etiket ' + (isEdit ? 'Güncelleme' : 'Ekleme')));
+    });
+    useEffect(() => {
+        if (id){
+            setIsEdit(true);
+            TagService.fetchTagById(id).then((tag) => {
+                setFormData(tag);
+            }).catch((error) => {
+                console.error('Etiket bilgisi alınamadı:', error);
+            });
+        }
+    }, [id]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log(formData);
         try {
-            const response = await api.post('/admin/tag', formData);
-            alert(`Etiket başarıyla eklendi! ID: ${response.data.id}`);
+            if (isEdit && id){
+                const response = await TagService.updateTag(id, formData);
+                alert(`Etiket başarıyla güncellendi! ID: ${response.data.id}`);
+            }
+            else{
+                const response = await TagService.addTag(formData);
+                alert(`Etiket başarıyla eklendi! ID: ${response.data.id}`);
+            }
+
         } catch (error: any) {
             console.error(error);
             alert(
@@ -48,7 +75,7 @@ const TagAdd = () => {
                                onChange={handleInputChange}
                         />
                         <span className="badge bg-info block text-xs hover:top-0">
-                            Etikete verilem benzersiz isim. URL'de kullanılacak.
+                            Etikete verilen benzersiz isim. URL'de kullanılacak.
                         </span>
 
                     </div>
