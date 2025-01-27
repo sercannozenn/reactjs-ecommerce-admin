@@ -15,8 +15,15 @@ const routes = [
         protected: true
     },
     {
-        path: '/kategori-ekle',
+        path: '/kategoriler/ekle',
         name: 'CategoryAdd',
+        element: <CategoryAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/kategoriler/:id/duzenle',
+        name: 'CategoryEdit',
         element: <CategoryAdd />,
         layout: 'default',
         protected: true
@@ -29,8 +36,15 @@ const routes = [
         protected: true
     },
     {
-        path: '/etiket-ekle',
+        path: '/etiketler/ekle',
         name: 'TagAdd',
+        element: <TagAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/etiketler/:id/duzenle',
+        name: 'TagEdit',
         element: <TagAdd />,
         layout: 'default',
         protected: true
