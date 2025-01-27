@@ -24,8 +24,10 @@ import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuAuthentication from '../Icon/Menu/IconMenuAuthentication';
 import IconMenuDocumentation from '../Icon/Menu/IconMenuDocumentation';
 import { route } from '../../utils/RouteHelper';
+
 const Sidebar = () => {
 
+    const [menuCount, setMenuCount] = useState(0);
     const [currentMenu, setCurrentMenu] = useState<string>('');
     const [errorSubMenu, setErrorSubMenu] = useState(false);
     const themeConfig = useSelector((state: IRootState) => state.themeConfig);
@@ -40,21 +42,16 @@ const Sidebar = () => {
     };
 
     useEffect(() => {
-        const selector = document.querySelector('.sidebar ul a[href="' + window.location.pathname + '"]');
-        if (selector) {
-            selector.classList.add('active');
-            const ul: any = selector.closest('ul.sub-menu');
-            if (ul) {
-                let ele: any = ul.closest('li.menu').querySelectorAll('.nav-link') || [];
-                if (ele.length) {
-                    ele = ele[0];
-                    setTimeout(() => {
-                        ele.click();
-                    });
-                }
+        const allLinks = document.querySelectorAll('.sidebar a');
+        allLinks.forEach((link) => {
+            const href = link.getAttribute('href');
+            if (href == window.location.pathname) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
             }
-        }
-    }, []);
+        });
+    }, [location]);
 
     useEffect(() => {
         if (window.innerWidth < 1024 && themeConfig.sidebar) {
@@ -141,10 +138,10 @@ const Sidebar = () => {
                                 <AnimateHeight duration={300} height={currentMenu === 'category' ? 'auto' : 0}>
                                     <ul className="sub-menu text-gray-500">
                                         <li>
-                                            <NavLink to={route('CategoryList')}>Kategori Listesi</NavLink>
+                                            <NavLink to={route('CategoryList')} >Kategori Listesi</NavLink>
                                         </li>
                                         <li>
-                                            <NavLink to={route('CategoryAdd')}>Kategori Ekleme</NavLink>
+                                            <NavLink to={route('CategoryAdd')} >Kategori Ekleme</NavLink>
                                         </li>
                                     </ul>
                                 </AnimateHeight>
@@ -169,10 +166,10 @@ const Sidebar = () => {
                                 <AnimateHeight duration={300} height={currentMenu === 'tag' ? 'auto' : 0}>
                                     <ul className="sub-menu text-gray-500">
                                         <li>
-                                            <NavLink to={route('TagList')}>Etiket Listesi</NavLink>
+                                            <NavLink to={route('TagList')} >Etiket Listesi</NavLink>
                                         </li>
                                         <li>
-                                            <NavLink to={route('TagAdd')}>Etiket Ekleme</NavLink>
+                                            <NavLink to={route('TagAdd')} >Etiket Ekleme</NavLink>
                                         </li>
                                     </ul>
                                 </AnimateHeight>
