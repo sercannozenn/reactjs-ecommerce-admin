@@ -2,6 +2,7 @@ import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { IRootState } from '../../store';
+import Swal from 'sweetalert2';
 import Dropdown from '../../components/Dropdown';
 import { setPageTitle } from '../../store/themeConfigSlice';
 import IconCaretDown from '../../components/Icon/IconCaretDown';
@@ -14,19 +15,6 @@ const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 
 const TagList = () => {
-    const navigateToRoute = useRouteNavigator();
-
-    const handleEdit = (id:number) => {
-        navigateToRoute('TagEdit', {id})
-    };
-
-    const handleDelete = (id:number) => {
-        if (window.confirm('Bu etiketi silmek istediğinize emin misiniz?')) {
-            console.log(`Silme işlemi başladı: ID ${id}`);
-            // Silme API çağrısını burada yapabilirsiniz.
-        }
-    };
-
     const dispatch = useDispatch();
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
     const [data, setData] = useState([]);
@@ -35,6 +23,7 @@ const TagList = () => {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [rowsPerPage, setRowsPerPage] = useState(PAGE_SIZES[1]);
+    const [refreshLoad, setRefreshLoad] = useState(false);
 
     const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
         columnAccessor: 'id',
@@ -56,6 +45,60 @@ const TagList = () => {
         { accessor: 'name', title: 'Etiket Adı' },
         { accessor: 'slug', title: 'Etiket Slug Adı' }
     ];
+
+    const handleDelete = (id: number, name: string) => {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Etiketi Sil',
+            text: name + ' adlı  etiketi silmek istediğinize emin misiniz?',
+            showCancelButton: true,
+            confirmButtonText: 'Evet',
+            cancelButtonText: 'Hayır',
+            padding: '2em',
+            customClass: {
+                popup: 'sweet-alerts'
+            }
+        }).then(async (result) => {
+            if (result.value) {
+                try {
+                    const response = await TagService.deleteTag(id);
+                    setRefreshLoad(prev => !prev);
+
+                    Swal.fire({
+                        title: 'Silindi!',
+                        text: name + ' adlı etiket silindi.',
+                        icon: 'success',
+                        confirmButtonText: 'Tamam',
+                        customClass: { popup: 'sweet-alerts' }
+                    });
+                }
+                catch (error){
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: name + ' adlı etiket silinemedi. Hata Alındı.',
+                        icon: 'error',
+                        confirmButtonText: 'Tamam',
+                        customClass: { popup: 'sweet-alerts' }
+                    });
+                }
+
+            }else{
+                Swal.fire({
+                    title: 'Bilgi!',
+                    text: 'Herhangi bir işlem yapılmadı.',
+                    icon: 'info',
+                    confirmButtonText: 'Tamam',
+                    customClass: { popup: 'sweet-alerts' }
+                });
+            }
+        });
+    };
+    const navigateToRoute = useRouteNavigator();
+
+    const handleEdit = (id: number) => {
+        navigateToRoute('TagEdit', { id });
+    };
+
     useEffect(() => {
         dispatch(setPageTitle('Etiket Listesi'));
     });
@@ -73,7 +116,7 @@ const TagList = () => {
             }
         };
         loadTags();
-    }, [page, rowsPerPage, search, sortStatus]);
+    }, [page, rowsPerPage, search, sortStatus, refreshLoad]);
 
     return (
         <div>
@@ -156,8 +199,8 @@ const TagList = () => {
                             },
                             {
                                 accessor: 'actions',
-                                title: 'Actions',
-                                render: (record: {id: number}) => (
+                                title: 'İşlemler',
+                                render: (record: { id: number, name: string }) => (
                                     <div className="flex space-x-2">
                                         <button
                                             onClick={() => handleEdit(record.id)}
@@ -166,14 +209,14 @@ const TagList = () => {
                                             <IconEdit />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(record.id)}
+                                            onClick={() => handleDelete(record.id, record.name)}
                                             className="p-2"
                                         >
                                             <IconXCircle />
                                         </button>
                                     </div>
-                                ),
-                            },
+                                )
+                            }
                         ]}
                         highlightOnHover
                         totalRecords={total}
@@ -186,7 +229,11 @@ const TagList = () => {
                         sortStatus={sortStatus}
                         onSortStatusChange={newSortStatus => setSortStatus(newSortStatus)}
                         minHeight={200}
-                        paginationText={({ from, to, totalRecords }) => `${totalRecords} kayıttan  ${from} ile ${to} arasındaki satırlar görüntüleniyor.`}
+                        paginationText={({
+                                             from,
+                                             to,
+                                             totalRecords
+                                         }) => `${totalRecords} kayıttan  ${from} ile ${to} arasındaki satırlar görüntüleniyor.`}
                     />
                 </div>
             </div>

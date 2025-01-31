@@ -52,6 +52,7 @@
         "react-simplemde-editor": "^5.2.0",
         "react-sortablejs": "^6.1.4",
         "react-text-mask": "^5.5.0",
+        "slugify": "^1.6.6",
         "sortablejs": "^1.15.0",
         "sweetalert2": "^11.6.8",
         "sweetalert2-react-content": "^5.0.7",
