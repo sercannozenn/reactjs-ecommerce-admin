@@ -50,19 +50,10 @@ export const TagService = {
     },
     deleteTag: async (id: number) => {
         try {
-            const response = await api.delete(`/tags/${id}`);
+            const response = await api.delete(`admin/tag/${id}`);
             return response.data;
         } catch (error) {
             console.error('TagService deleteTag Error:', error);
-            throw error;
-        }
-    },
-    editTag: async (id: number, payload: any) => {
-        try {
-            const response = await api.put(`/tags/${id}`, payload);
-            return response.data;
-        } catch (error) {
-            console.error('TagService editTag Error:', error);
             throw error;
         }
     },
