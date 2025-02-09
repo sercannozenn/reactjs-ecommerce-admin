@@ -2,6 +2,8 @@ import { lazy } from 'react';
 import CategoryList from '../pages/category/CategoryList';
 import TagAdd from '../pages/tag/TagAdd';
 import TagList from '../pages/tag/TagList';
+import ProductAdd from '../pages/product/ProductAdd';
+import ProductList from '../pages/product/ProductList';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const CategoryAdd = lazy(() => import('../pages/category/CategoryAdd'));
@@ -53,6 +55,27 @@ const routes = [
         path: '/etiketler',
         name: 'TagList',
         element: <TagList />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/urunler/ekle',
+        name: 'ProductAdd',
+        element: <ProductAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/urunler/:id/duzenle',
+        name: 'ProductEdit',
+        element: <ProductAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/urunler',
+        name: 'ProductList',
+        element: <ProductList />,
         layout: 'default',
         protected: true
     },
