@@ -1,4 +1,9 @@
 import api from '../api';
+type ImageType = {
+    id: string;
+    file: File;
+    preview: string;
+};
 
 type AddDataType = {
     category_ids: number[];
@@ -13,7 +18,7 @@ type AddDataType = {
     keywords: string;
     seo_description: string;
     author: string,
-    images: File[];
+    images: ImageType[];
     featured_image: string | null;
 };
 
@@ -75,7 +80,8 @@ export const ProductService = {
             // Görselleri ekle
             if (data.images?.length) {
                 data.images.forEach((image) => {
-                    formData.append('images[]', image);
+                    formData.append('images[]', image.file);
+                    formData.append('image_ids[]', image.id);
                 });
             }
 
