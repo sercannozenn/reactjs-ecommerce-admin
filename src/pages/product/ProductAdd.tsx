@@ -82,7 +82,6 @@ const ProductAdd = () => {
     const [errors, setErrors] = useState<Record<string, string[]>>({}); // Validation hataları için state
     const { id } = useParams<{ id: string }>(); // id urlden alınır.
     const [isEdit, setIsEdit] = useState(false);
-
     const pageTitle = 'Ürün ' + (isEdit ? 'Güncelleme' : 'Ekleme');
 
     useEffect(() => {
@@ -150,17 +149,19 @@ const ProductAdd = () => {
     }, [formData.images]);
 
 
+    const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     // Dropzone için ayar
     const onDrop = (acceptedFiles: File[], rejectedFiles: FileRejection[], event: DropEvent) => {
         const newImages: ImageType[] = acceptedFiles.map((file: File) => ({
-            id: file.name, // Benzersiz ID (isteğe bağlı değiştirilebilir)
+            id: generateUniqueId(), // Benzersiz ID (isteğe bağlı değiştirilebilir)
             file,
             preview: URL.createObjectURL(file) // Görsel önizlemesi
         }));
         setFormData(prev => {
             // Eğer hiç görsel yoksa ve yeni görseller eklendiyse
             const shouldSetFeatured = prev.images.length === 0 && newImages.length > 0;
-
+            console.log(newImages);
             return {
                 ...prev,
                 images: [...prev.images, ...newImages],
@@ -357,7 +358,6 @@ const ProductAdd = () => {
             ...formData,
             category_ids: formData.category_ids.map(cat => cat.value),
             tag_ids: formData.tag_ids.map(tag => tag.value),
-            images: formData.images.map(img => img.file)
         };
 
         try {
@@ -598,24 +598,21 @@ const ProductAdd = () => {
                                     {formData.featured_image === image.id && (
                                         <span
                                             className="absolute top-0 left-0 bg-green-500 text-white text-xs px-2 py-1 rounded-br-md">
-                    Öne Çıkan
-                  </span>
+                                            Öne Çıkan
+                                        </span>
                                     )}
                                     <div
                                         className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
 
-                                        {/* Öne Çıkar Butonu */}
                                         <button
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleSetFeatured(image.id);
                                             }}
-                                            className="absolute bottom-0 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-tr-md"
-                                        >
+                                            className="absolute bottom-0 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-tr-md">
                                             Öne Çıkar
                                         </button>
-                                        {/* Sil Butonu */}
                                         <button
                                             type="button"
                                             onClick={(e) => {
