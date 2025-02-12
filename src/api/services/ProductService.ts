@@ -35,15 +35,17 @@ export const ProductService = {
             throw error;
         }
     },
-    list: async (page = 1, limit = 10, search = '', sortStatus = { columnAccessor: 'id', direction: 'asc' }) => {
+    list: async (page = 1, limit = 10, sortStatus = { columnAccessor: 'id', direction: 'asc' }, filterData:Record<string, any>) => {
+        console.log(JSON.stringify(filterData));
+        console.log(filterData);
         try {
             const response = await api.get(`admin/product`, {
                 params: {
                     page,
                     limit,
-                    search,
                     sort_by: sortStatus.columnAccessor,
-                    sort_order: sortStatus.direction
+                    sort_order: sortStatus.direction,
+                    filter: filterData
                 }
             });
             return response.data;
@@ -55,6 +57,15 @@ export const ProductService = {
     create: async () => {
         try {
             const response = await api.get('/admin/product/create');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetch create data:', error);
+            throw error;
+        }
+    },
+    getFiltersData: async () => {
+        try {
+            const response = await api.get('/admin/product/filters-data');
             return response.data;
         } catch (error) {
             console.error('Error fetch create data:', error);
