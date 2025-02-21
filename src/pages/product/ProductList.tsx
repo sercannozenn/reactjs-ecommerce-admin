@@ -11,9 +11,12 @@ import IconEdit from '../../components/Icon/IconEdit';
 import { ProductService } from '../../api/services/ProductService';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 import IconRefresh from '../../components/Icon/IconRefresh';
-import { Box, Tooltip } from '@mantine/core';
+import IconSettings from '../../components/Icon/IconSettings';
+import IconPlus from '../../components/Icon/IconPlus';
+import { Box, Collapse, Tooltip } from '@mantine/core';
 import makeAnimated from 'react-select/animated';
 import Select, { ActionMeta, MultiValue } from 'react-select';
+import '../../assets/css/style.css';
 
 const customNoOptionsMessage = () => {
     return (
@@ -79,8 +82,8 @@ const ProductList = () => {
         min_price: '',
         max_price: '',
         min_price_discount: '',
-        max_price_discount: '',
-    })
+        max_price_discount: ''
+    });
     const [categories, setCategories] = useState([]); // Üst kategoriler
     const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
 
@@ -90,6 +93,7 @@ const ProductList = () => {
     });
 
     const [hideCols, setHideCols] = useState<any>([]);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     const showHideColumns = (col: any, value: any) => {
         if (hideCols.includes(col)) {
@@ -181,14 +185,14 @@ const ProductList = () => {
             setCategories(
                 response.data.categories.map((category: any) => ({
                     value: category.id,
-                    label: category.name,
+                    label: category.name
                 }))
             );
 
             setTagsOptions(
                 response.data.tags.map((tag: any) => ({
                     value: tag.id,
-                    label: tag.name,
+                    label: tag.name
                 }))
             );
         } catch (error) {
@@ -213,7 +217,7 @@ const ProductList = () => {
         dispatch(setPageTitle('Ürün Listesi'));
     });
     useEffect(() => {
-        getFiltersData()
+        getFiltersData();
     }, []);
     useEffect(() => {
         const loadProducts = async () => {
@@ -242,167 +246,178 @@ const ProductList = () => {
                 min-width: 200px;
                 right: 0;
                 }
-// .css-1dyz3mf{
-// display: block !important;
-// }
-// .css-1dyz3mf > div{
-// width: unset !important;
-// }
                 `}
             </style>
 
             <div className="panel mt-6">
                 <div className="flex md:items-center md:flex-row flex-col mb-5 gap-5">
                     <h5 className="font-semibold text-lg dark:text-white-light">Ürün Listesi</h5>
-
-
-                </div>
-                <div className="flex md:items-center md:flex-row flex-col mb-5 gap-5">
-                </div>
-                <div className=" grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-                    <div className="text-right">
-                        <input type="text" className="form-input" placeholder="Arama Yap..." value={filterData.search}
-                               onChange={(e) =>
-                                   setFilterData((prevData) => ({
-                                       ...prevData,
-                                       search: e.target.value,
-                                   }))} />
+                    <div className="ltr:ml-auto rtl:mr-auto flex gap-2">
+                        <button
+                            type="button"
+                            className={`btn ${isFilterOpen ? 'btn-primary' : 'btn-outline-primary'} gap-2`}
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        >
+                            <IconSettings />
+                            Filtreler
+                        </button>
+                        {/*<button type="button" className="btn btn-primary gap-2" onClick="">*/}
+                        {/*    <IconPlus />*/}
+                        {/*    Yeni Ekle*/}
+                        {/*</button>*/}
                     </div>
-                    <div className="text-right">
-                        <Select
-                            value={filterData.categories}
-                            isMulti
-                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
-                            options={categories}
-                            className="basic-multi-select"
-                            placeholder="Kategoriler"
-                            classNamePrefix="select"
-                            name="categories"
-                            onChange={(selectedOptions) =>
-                                setFilterData((prevData) => ({
-                                    ...prevData,
-                                    categories: selectedOptions,
-                                }))
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="dropdown my-5">
+                        <Dropdown
+                            placement={`${isRtl ? 'bottom-end' : 'bottom-start'}`}
+                            btnClassName="!flex items-center border font-semibold border-white-light dark:border-[#253b5c] rounded-md px-4 py-2 text-sm dark:bg-[#1b2e4b] dark:text-white-dark"
+                            button={
+                                <>
+                                    <span className="ltr:mr-1 rtl:ml-1">Sütunlar</span>
+                                    <IconCaretDown className="w-5 h-5" />
+                                </>
                             }
-                        />
+                        >
+                            <ul className="!min-w-[140px]">
+                                {cols.map((col, i) => {
+                                    return (
+                                        <li
+                                            key={i}
+                                            className="flex flex-col"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                            }}
+                                        >
+                                            <div className="flex items-center px-4 py-1">
+                                                <label className="cursor-pointer mb-0">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!hideCols.includes(col.accessor)}
+                                                        className="form-checkbox"
+                                                        defaultValue={col.accessor}
+                                                        onChange={(event: any) => {
+                                                            setHideCols(event.target.value);
+                                                            showHideColumns(col.accessor, event.target.checked);
+                                                        }}
+                                                    />
+                                                    <span className="ltr:ml-2 rtl:mr-2">{col.title}</span>
+                                                </label>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </Dropdown>
                     </div>
-                    <div className="text-right">
-                        <Select
-                            value={filterData.tags}
-                            isMulti
-                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
-                            options={tagsOptions}
-                            className="basic-multi-select"
-                            placeholder="Etiketler"
-                            classNamePrefix="select"
-                            name="tags"
-                            onChange={(selectedOptions) =>
-                                setFilterData((prevData) => ({
-                                    ...prevData,
-                                    tags: selectedOptions,
-                                }))
-                            }
-                        />
-                    </div>
-                    <div className="text-right">
-                        <div className="flex">
-                            <input type="number" placeholder="Minimum Ana Fiyat"
-                                   className="form-input ltr:border-r-0 rtl:border-l-0 focus:!border-r rounded-none flex-1"
-                                   value={filterData.min_price}
-                                   onChange={(e) =>
-                                       setFilterData((prevData) => ({
-                                           ...prevData,
-                                           min_price: e.target.value,
-                                       }))
-                                   }
+                    <Collapse in={isFilterOpen} >
+                        <div className="flex flex-col gap-5 my-5 filter-product-list">
+                            <div className="w-full">
+                                <input type="text" className="form-input" placeholder="Arama Yap..."
+                                       value={filterData.search}
+                                       onChange={(e) =>
+                                           setFilterData((prevData) => ({
+                                               ...prevData,
+                                               search: e.target.value
+                                           }))} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="text-right">
+                                        <Select
+                                            value={filterData.categories}
+                                            isMulti
+                                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
+                                            options={categories}
+                                            className="basic-multi-select"
+                                            placeholder="Kategoriler"
+                                            classNamePrefix="select"
+                                            name="categories"
+                                            onChange={(selectedOptions) =>
+                                                setFilterData((prevData) => ({
+                                                    ...prevData,
+                                                    categories: selectedOptions
+                                                }))
+                                            }
+                                        />
+                                </div>
+                                <div className="text-right">
+                                    <Select
+                                        value={filterData.tags}
+                                        isMulti
+                                        components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
+                                        options={tagsOptions}
+                                        className="basic-multi-select"
+                                        placeholder="Etiketler"
+                                        classNamePrefix="select"
+                                        name="tags"
+                                        onChange={(selectedOptions) =>
+                                            setFilterData((prevData) => ({
+                                                ...prevData,
+                                                tags: selectedOptions
+                                            }))
+                                        }
+                                    />
+                                </div>
+                                <div className="text-right">
+                                    <div className="flex">
+                                        <input type="number" placeholder="Minimum Fiyat"
+                                               className="form-input ltr:border-r-0 rtl:border-l-0 focus:!border-r rounded-none flex-1"
+                                               value={filterData.min_price}
+                                               onChange={(e) =>
+                                                   setFilterData((prevData) => ({
+                                                       ...prevData,
+                                                       min_price: e.target.value
+                                                   }))
+                                               }
 
-                            />
-                            <input type="number"
-                                   placeholder="Maksimum Ana Fiyat"
-                                   className="form-input ltr:rounded-l-none rtl:rounded-r-none flex-1"
-                                   value={filterData.max_price}
-                                   onChange={(e) =>
-                                       setFilterData((prevData) => ({
-                                           ...prevData,
-                                           max_price: e.target.value,
-                                       }))
-                                   }
-                            />
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <div className="flex">
-                            <input type="number" placeholder="Minimum İndirimli Son Fiyat"
-                                   className="form-input ltr:border-r-0 rtl:border-l-0 focus:!border-r rounded-none flex-1"
-                                   value={filterData.min_price_discount}
-                                   onChange={(e) =>
-                                       setFilterData((prevData) => ({
-                                           ...prevData,
-                                           min_price_discount: e.target.value,
-                                       }))
-                                   }
+                                        />
+                                        <input type="number"
+                                               placeholder="Maksimum Fiyat"
+                                               className="form-input ltr:rounded-l-none rtl:rounded-r-none flex-1"
+                                               value={filterData.max_price}
+                                               onChange={(e) =>
+                                                   setFilterData((prevData) => ({
+                                                       ...prevData,
+                                                       max_price: e.target.value
+                                                   }))
+                                               }
+                                        />
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="flex">
+                                        <input type="number" placeholder="Minimum İndirimli Fiyat"
+                                               className="form-input ltr:border-r-0 rtl:border-l-0 focus:!border-r rounded-none flex-1"
+                                               value={filterData.min_price_discount}
+                                               onChange={(e) =>
+                                                   setFilterData((prevData) => ({
+                                                       ...prevData,
+                                                       min_price_discount: e.target.value
+                                                   }))
+                                               }
 
-                            />
-                            <input type="number"
-                                   placeholder="Maksimum İndirimli Son Fiyat"
-                                   className="form-input ltr:rounded-l-none rtl:rounded-r-none flex-1"
-                                   value={filterData.max_price_discount}
-                                   onChange={(e) =>
-                                       setFilterData((prevData) => ({
-                                           ...prevData,
-                                           max_price_discount: e.target.value,
-                                       }))
-                                   }
-                            />
-                        </div>
-                    </div>
+                                        />
+                                        <input type="number"
+                                               placeholder="Maksimum İndirimli Fiyat"
+                                               className="form-input ltr:rounded-l-none rtl:rounded-r-none flex-1"
+                                               value={filterData.max_price_discount}
+                                               onChange={(e) =>
+                                                   setFilterData((prevData) => ({
+                                                       ...prevData,
+                                                       max_price_discount: e.target.value
+                                                   }))
+                                               }
+                                        />
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div className="flex md:items-center md:flex-row flex-col gap-5">
-                        <div className="dropdown">
-                            <Dropdown
-                                placement={`${isRtl ? 'bottom-end' : 'bottom-start'}`}
-                                btnClassName="!flex items-center border font-semibold border-white-light dark:border-[#253b5c] rounded-md px-4 py-2 text-sm dark:bg-[#1b2e4b] dark:text-white-dark"
-                                button={
-                                    <>
-                                        <span className="ltr:mr-1 rtl:ml-1">Sütunlar</span>
-                                        <IconCaretDown className="w-5 h-5" />
-                                    </>
-                                }
-                            >
-                                <ul className="!min-w-[140px]">
-                                    {cols.map((col, i) => {
-                                        return (
-                                            <li
-                                                key={i}
-                                                className="flex flex-col"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                }}
-                                            >
-                                                <div className="flex items-center px-4 py-1">
-                                                    <label className="cursor-pointer mb-0">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={!hideCols.includes(col.accessor)}
-                                                            className="form-checkbox"
-                                                            defaultValue={col.accessor}
-                                                            onChange={(event: any) => {
-                                                                setHideCols(event.target.value);
-                                                                showHideColumns(col.accessor, event.target.checked);
-                                                            }}
-                                                        />
-                                                        <span className="ltr:ml-2 rtl:mr-2">{col.title}</span>
-                                                    </label>
-                                                </div>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            </Dropdown>
+
                         </div>
-                    </div>
+                    </Collapse>
 
                 </div>
+
 
                 <div className="datatables">
                     <DataTable
@@ -420,6 +435,12 @@ const ProductList = () => {
                                 title: 'Ürün Adı',
                                 sortable: true,
                                 hidden: hideCols.includes('name')
+                            },
+                            {
+                                accessor: 'slug',
+                                title: 'Ürün Slug Adı',
+                                sortable: true,
+                                hidden: hideCols.includes('slug')
                             },
                             {
                                 accessor: 'short_description',

@@ -1,8 +1,10 @@
 import api from '../api';
+import { string } from 'yup';
 type ImageType = {
-    id: string;
-    file: File;
-    preview: string;
+    id: string; // Yüklenen dosya için unique ID veya veritabanından gelen ID
+    file?: File; // Sadece yeni yüklenen dosyalar için
+    image_path: string; // Hem yeni hem de var olan görsellerin yolunu saklar
+    isNew: boolean; // Yeni eklenmiş mi yoksa önceden var olan mı
 };
 
 type AddDataType = {
@@ -19,7 +21,8 @@ type AddDataType = {
     seo_description: string;
     author: string,
     images: ImageType[];
-    featured_image: string | null;
+    existing_images: string[];
+    featured_image: string;
 };
 
 export const ProductService = {
@@ -91,11 +94,12 @@ export const ProductService = {
             // Görselleri ekle
             if (data.images?.length) {
                 data.images.forEach((image) => {
-                    formData.append('images[]', image.file);
-                    formData.append('image_ids[]', image.id);
+                    if (image.file !== undefined){
+                        formData.append('images[]', image.file);
+                        formData.append('image_ids[]', image.id);
+                    }
                 });
             }
-
             const response = await api.post(`admin/product`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
@@ -109,7 +113,50 @@ export const ProductService = {
     },
     update: async (id: string, data: AddDataType) => {
         try {
-            const response = await api.put(`admin/product/${id}`, data);
+            const formData = new FormData();
+            let imageIds:string[] = [];
+            formData.append('_method', 'put'); // PUT veya PATCH olduğunda eklenmeli
+
+            // Normal form verilerini ekle
+            (Object.keys(data) as Array<keyof AddDataType>).forEach(key => {
+                if (key !== 'images') {
+                    const value = data[key];
+                    if (key === 'category_ids' || key === 'tag_ids' || key === 'existing_images') {
+                        formData.append(key, JSON.stringify(value));
+                    } else {
+                        formData.append(key, String(value));
+                    }
+                }
+            });
+            console.log(data);
+            console.log(data.images);
+            // Görselleri ekle
+            if (data.images?.length) {
+                // Yeni yüklenen görseller için
+                const newImages = data.images.filter(img => img.isNew && img.file);
+                newImages.forEach((image) => {
+                    formData.append('images[]', image.file as File);
+                    // formData.append('image_ids[]', image.id);
+                    imageIds.push(image.id);
+                });
+            }
+
+            if (data.existing_images?.length) {
+                const existingImages = data.existing_images;
+                existingImages.forEach((id) => {
+                    // formData.append('image_ids[]', id);
+                    imageIds.push(id.toString());
+                });
+            }
+            formData.append('image_ids', JSON.stringify(imageIds));
+
+
+
+            const response = await api.post(`admin/product/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             return response.data;
         } catch (error) {
             console.error('Error tag update:', error);
@@ -121,7 +168,7 @@ export const ProductService = {
             const response = await api.delete(`admin/product/${id}`);
             return response.data;
         } catch (error) {
-            console.error('CategoryService delete Error:', error);
+            console.error('ProductService delete Error:', error);
             throw error;
         }
     },

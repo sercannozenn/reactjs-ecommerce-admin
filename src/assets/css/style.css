@@ -1,0 +1,3 @@
+.filter-product-list input::placeholder, .filter-product-list select::placeholder{
+    font-size: 12px;
+}

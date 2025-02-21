@@ -9,6 +9,7 @@ import { useDispatch } from 'react-redux';
 import { ProductService } from '../../api/services/ProductService';
 import { JoditEditorComponent } from '../../components/Editors/JoditEditor';
 import { DropEvent, useDropzone, FileRejection, Accept } from 'react-dropzone';
+import Image from 'quill/formats/image';
 
 
 // const animatedComponents = makeAnimated();
@@ -25,9 +26,11 @@ type SelectOptionsType = {
     label: string
 }
 type ImageType = {
-    id: string;
-    file: File;
-    preview: string;
+    id: string; // Yüklenen dosya için unique ID veya veritabanından gelen ID
+    file?: File; // Sadece yeni yüklenen dosyalar için
+    image_path: string; // Hem yeni hem de var olan görsellerin yolunu saklar
+    isNew: boolean; // Yeni eklenmiş mi yoksa önceden var olan mı
+    is_featured: boolean|false;
 };
 type FormDataType = {
     category_ids: SelectOptionsType[];
@@ -45,7 +48,8 @@ type FormDataType = {
     seo_description: string;
     author: string;
     images: ImageType[];
-    featured_image: string | null;
+    existing_images: [];
+    featured_image: string;
 };
 
 const customNoOptionsMessage = () => {
@@ -75,7 +79,8 @@ const ProductAdd = () => {
         seo_description: '',
         author: '',
         images: [],
-        featured_image: null
+        existing_images: [],
+        featured_image: ''
     });
     const [categories, setCategories] = useState([]); // Üst kategoriler
     const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
@@ -90,12 +95,14 @@ const ProductAdd = () => {
     useEffect(() => {
         const fetchCreateData = async () => {
             try {
-                const response = await ProductService.create();
-                setTagsOptions(response.data.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name }))); // Etiketleri dönüştür
-                setCategories(response.data.categories.map((category: Category) => ({
-                    value: category.id,
-                    label: category.name
-                }))); // Kategorileri dönüştür
+                if (!id) {
+                    const response = await ProductService.create();
+                    setTagsOptions(response.data.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name }))); // Etiketleri dönüştür
+                    setCategories(response.data.categories.map((category: Category) => ({
+                        value: category.id,
+                        label: category.name
+                    }))); // Kategorileri dönüştür
+                }
             } catch (error) {
                 console.error('Veriler alınırken hata oluştu:', error);
             }
@@ -106,15 +113,37 @@ const ProductAdd = () => {
     useEffect(() => {
         if (id) {
             setIsEdit(true);
-            ProductService.fetchById(id).then((product) => {
+            ProductService.fetchById(id).then((response) => {
+                console.log("response");
+                console.log(response);
+                const lastPrice = response.product.prices && response.product.prices.length > 0
+                    ? response.product.prices[response.product.prices.length - 1]
+                    : { price: 0, price_discount: 0 };
                 setFormData((prev) => (
                     {
                         ...prev,
-                        ...product,
-                        tag_ids: product.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name })),
-                        category_ids: product.category_ids.map((tag: Tag) => ({ value: tag.id, label: tag.name }))
+                        ...response.product,
+                        price: lastPrice.price ?? 0,
+                        price_discount: lastPrice.price_discount ?? 0,
+                        featured_image: response.product.images.find((image: ImageType) => image.is_featured)?.id || '', // Öne çıkan görselin ID'si
+                        images: response.product.images.map((image: ImageType) => ({
+                            id: image.id || '',
+                            image_path: 'http://kermes.test/storage/' + (image.image_path || ''),
+                            isNew: false
+                        })),
+                        tag_ids: response.product.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name || '' })),
+                        category_ids: response.product.categories.map((tag: Tag) => ({ value: tag.id, label: tag.name || '' })),
+                        name: response.product.name || '',
+                        slug: response.product.slug || '',
+                        short_description: response.product.short_description || '',
+                        long_description: response.product.long_description || '',
                     }
                 ));
+                setTagsOptions(response.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name }))); // Etiketleri dönüştür
+                setCategories(response.categories.map((category: Category) => ({
+                    value: category.id,
+                    label: category.name
+                }))); // Kategorileri dönüştür
             }).catch((error) => {
                 console.log(error);
                 Swal.fire({
@@ -143,7 +172,7 @@ const ProductAdd = () => {
         return () => {
             // Cleanup fonksiyonu
             formData.images.forEach(image => {
-                URL.revokeObjectURL(image.preview);
+                URL.revokeObjectURL(image.image_path);
             });
         };
     }, [formData.images]);
@@ -156,7 +185,9 @@ const ProductAdd = () => {
         const newImages: ImageType[] = acceptedFiles.map((file: File) => ({
             id: generateUniqueId(), // Benzersiz ID (isteğe bağlı değiştirilebilir)
             file,
-            preview: URL.createObjectURL(file) // Görsel önizlemesi
+            image_path: URL.createObjectURL(file), // Görsel önizlemesi
+            isNew: true,
+            is_featured: false
         }));
         setFormData(prev => {
             // Eğer hiç görsel yoksa ve yeni görseller eklendiyse
@@ -214,13 +245,13 @@ const ProductAdd = () => {
         // Silinecek görselin URL'ini temizle
         const imageToRemove = formData.images.find(img => img.id === id);
         if (imageToRemove) {
-            URL.revokeObjectURL(imageToRemove.preview);
+            URL.revokeObjectURL(imageToRemove.image_path);
         }
 
         setFormData(prev => ({
             ...prev,
             images: prev.images.filter((image) => image.id !== id),
-            featured_image_id: prev.featured_image === id ? null : prev.featured_image
+            featured_image: prev.featured_image === id ? '' : prev.featured_image
         }));
     };
 
@@ -243,7 +274,8 @@ const ProductAdd = () => {
                 seo_description: '',
                 author: '',
                 images: [],
-                featured_image: null
+                existing_images: [],
+                featured_image: ''
             }
         );
         setErrors({});
@@ -259,8 +291,10 @@ const ProductAdd = () => {
     };
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-
+        setFormData(prev => ({
+            ...prev,
+            [name]: value === null ? '' : value
+        }));
         if (errors[name]) {
             // errors un içinde name varsa bunu errorsda ekleyecek
             setErrors((prev) => ({
@@ -358,6 +392,8 @@ const ProductAdd = () => {
             ...formData,
             category_ids: formData.category_ids.map(cat => cat.value),
             tag_ids: formData.tag_ids.map(tag => tag.value),
+            images: formData.images.filter((img: ImageType): img is ImageType & {file: File} => img.isNew && img.file !== undefined).map((img) => img), // Yeni yüklenen dosyalar
+            existing_images: formData.images.filter((img) => !img.isNew).map((img) => img.id) // Var olan görseller
         };
 
         try {
@@ -413,7 +449,7 @@ const ProductAdd = () => {
                     <div className="mb-5">
                         <input type="text" placeholder="Ürün Adı *" className="form-input"
                                name="name"
-                               value={formData.name}
+                               value={formData.name || ''}
                                onChange={handleInputChange}
                         />
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name[0]}</p>}
@@ -421,7 +457,7 @@ const ProductAdd = () => {
                     <div className="mb-5">
                         <input type="text" placeholder="Ürün Slug Adı" className="form-input"
                                name="slug"
-                               value={formData.slug}
+                               value={formData.slug || ''}
                                onChange={handleSlugChange}
                         />
                         {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug[0]}</p>}
@@ -465,7 +501,7 @@ const ProductAdd = () => {
                     <div className="mb-5">
                         <h5 className="font-semibold text-lg dark:text-white-light mb-4">Kısa Açıklama</h5>
                         <JoditEditorComponent
-                            value={formData.short_description}
+                            value={formData.short_description || ''}
                             onChange={(value) =>
                                 setFormData((prev) => ({ ...prev, short_description: value }))
                             }
@@ -477,7 +513,7 @@ const ProductAdd = () => {
                     <div className="mb-5">
                         <h5 className="font-semibold text-lg dark:text-white-light mb-4">Uzun Açıklama</h5>
                         <JoditEditorComponent
-                            value={formData.long_description}
+                            value={formData.long_description || ''}
                             onChange={(value) =>
                                 setFormData((prev) => ({ ...prev, long_description: value }))
                             }
@@ -511,7 +547,7 @@ const ProductAdd = () => {
                     <div className="mb-5">
                         <input type="text" placeholder="Ürün Stok" className="form-input"
                                name="stock"
-                               value={formData.stock}
+                               value={formData.stock || 0}
                                onChange={handleInputChange}
                         />
                         {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock[0]}</p>}
@@ -519,7 +555,7 @@ const ProductAdd = () => {
                     <div className="mb-5">
                         <input type="text" placeholder="Ürün Stok Alt Limit Bildirimi" className="form-input"
                                name="stock_alert_limit"
-                               value={formData.stock_alert_limit}
+                               value={formData.stock_alert_limit || 10}
                                onChange={handleInputChange}
                         />
                         {errors.stock_alert_limit &&
@@ -543,7 +579,7 @@ const ProductAdd = () => {
                                name="price"
                                min="0" // Negatif değerleri engellemek için
                                step="0.01" // Ondalık basamaklara izin vermek için
-                               value={formData.price}
+                               value={formData.price || 0}
                                onChange={handleInputChange}
                         />
                         {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price[0]}</p>}
@@ -555,7 +591,7 @@ const ProductAdd = () => {
                                id="price_discount"
                                min="0" // Negatif değerleri engellemek için
                                step="0.01" // Ondalık basamaklara izin vermek için
-                               value={formData.price_discount}
+                               value={formData.price_discount || 0}
                                onChange={handleInputChange}
                         />
                         {errors.price_discount &&
@@ -590,8 +626,8 @@ const ProductAdd = () => {
                             {formData.images.map((image) => (
                                 <div key={image.id} className="relative group">
                                     <img
-                                        src={image.preview}
-                                        alt="Preview"
+                                        src={image.image_path}
+                                        alt="image_path"
                                         className="w-full h-32 object-contain rounded-md transition-transform group-hover:scale-105"
                                     />
                                     {/* Öne Çıkan İşareti */}
@@ -642,7 +678,7 @@ const ProductAdd = () => {
                             <div className="mb-5">
                                 <input type="text" placeholder="Anahtar Kelimeler" className="form-input"
                                        name="keywords"
-                                       value={formData.keywords}
+                                       value={formData.keywords || ''}
                                        onChange={handleInputChange}
                                 />
                                 {errors.keywords && <p className="text-red-500 text-xs mt-1">{errors.keywords[0]}</p>}
@@ -651,7 +687,7 @@ const ProductAdd = () => {
                                 <input type="text" placeholder="Kategori Hakkında Seo Açıklaması"
                                        className="form-input"
                                        name="seo_description"
-                                       value={formData.seo_description}
+                                       value={formData.seo_description || ''}
                                        onChange={handleInputChange}
                                 />
                                 {errors.seo_description &&
@@ -660,7 +696,7 @@ const ProductAdd = () => {
                             <div className="mb-5">
                                 <input type="text" placeholder="Yazar Bilgisi" className="form-input"
                                        name="author"
-                                       value={formData.author}
+                                       value={formData.author || ''}
                                        onChange={handleInputChange}
                                 />
                                 {errors.author && <p className="text-red-500 text-xs mt-1">{errors.author[0]}</p>}
