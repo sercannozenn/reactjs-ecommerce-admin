@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import ReactDOM from 'react-dom/client'
+import ReactDOM from 'react-dom/client';
 
 // Perfect Scrollbar
 import 'react-perfect-scrollbar/dist/css/styles.css';
@@ -16,14 +16,18 @@ import router from './router/index';
 
 // Redux
 import { Provider } from 'react-redux';
-import store from './store/index';
+import store, { persistor } from './store/index';
+
+import { PersistGate } from 'redux-persist/integration/react';
 
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-        <Suspense>
-            <Provider store={store}>
+    <Suspense>
+        <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
                 <RouterProvider router={router} />
-            </Provider>
-        </Suspense>
+            </PersistGate>
+        </Provider>
+    </Suspense>
 );
 

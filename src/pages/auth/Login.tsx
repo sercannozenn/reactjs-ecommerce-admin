@@ -5,9 +5,10 @@ import { setPageTitle } from '../../store/themeConfigSlice';
 import IconMail from '../../components/Icon/IconMail';
 import IconLockDots from '../../components/Icon/IconLockDots';
 import api from '../../api/api';
-import { setToken } from '../../store/slices/auth/authSlice';
+import { setToken, setUser } from '../../store/slices/auth/authSlice';
 import { AxiosError } from 'axios';
-import { getRoutePath, useRouteNavigator } from '../../utils/RouteHelper';
+import { useRouteNavigator } from '../../utils/RouteHelper';
+import store from '../../store';
 
 
 const Login = () => {
@@ -30,9 +31,14 @@ const Login = () => {
 
         try {
             const response = await api.post('/login', { email, password });
+            console.log('response');
+            console.log(response);
             if (response.data?.token) {
                 const token = response.data.token;
+                console.log('response.data.user');
+                console.log(response.data.user);
                 dispatch(setToken(token));
+                dispatch(setUser(response.data.user));
                 navigateToRoute('Index');
             } else {
                 setError('Beklenmeyen bir hata oluştu.');
