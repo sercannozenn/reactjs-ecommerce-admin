@@ -20,13 +20,11 @@ import IconMenuDatatables from '../Icon/Menu/IconMenuDatatables';
 import IconMenuForms from '../Icon/Menu/IconMenuForms';
 import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuMore from '../Icon/Menu/IconMenuMore';
+import { clearToken } from '../../store/slices/auth/authSlice';
+import { useRouteNavigator } from '../../utils/RouteHelper';
 
-type UserType = {
-    id: number,
-    name: string,
-    email: string
-}
 const Header = () => {
+    const navigateToRoute = useRouteNavigator();
     const location = useLocation();
     useEffect(() => {
         const selector = document.querySelector('ul.horizontal-menu a[href="' + window.location.pathname + '"]');
@@ -48,12 +46,8 @@ const Header = () => {
             }
         }
     }, [location]);
+
     const user = useSelector((state: IRootState) => state.auth.user);
-    console.log("SERCAN");
-    console.log(user);
-    useEffect(() => {
-        console.log('User in Header component:', user);
-    }, [user]);
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
 
     const themeConfig = useSelector((state: IRootState) => state.themeConfig);
@@ -121,6 +115,11 @@ const Header = () => {
     const removeNotification = (value: number) => {
         setNotifications(notifications.filter((user) => user.id !== value));
     };
+
+    const handleLogout = () => {
+        dispatch(clearToken());
+        navigateToRoute('Login');
+    }
 
     const [search, setSearch] = useState(false);
 
@@ -223,10 +222,10 @@ const Header = () => {
                                     </li>
 
                                     <li className="border-t border-white-light dark:border-white-light/10">
-                                        <Link to="/auth/boxed-signin" className="text-danger !py-3">
+                                        <a onClick={handleLogout} className="text-danger !py-3" href="#">
                                             <IconLogout className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 rotate-90 shrink-0" />
                                             Çıkış Yap
-                                        </Link>
+                                        </a>
                                     </li>
                                 </ul>
                             </Dropdown>

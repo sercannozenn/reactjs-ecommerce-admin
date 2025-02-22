@@ -9,8 +9,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
-    const token = useSelector((state: IRootState) => state.auth.token);
-    const localToken = token || localStorage.getItem('access_token');
+    const localToken = useSelector((state: IRootState) => state.auth.token);
 
     if (!localToken) {
         return <Navigate to="/giris-yap" replace />;
