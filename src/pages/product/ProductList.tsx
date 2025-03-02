@@ -33,6 +33,7 @@ const cols = [
     { accessor: 'slug', title: 'Slug' },
     { accessor: 'short_description', title: 'Kısa Açıklama' },
     { accessor: 'long_description', title: 'Uzun Açıklama' },
+    { accessor: 'brand', title: 'Marka' },
     { accessor: 'categories', title: 'Kategoriler' },
     { accessor: 'tags', title: 'Etiketler' },
     { accessor: 'price', title: 'Ana Fiyat' },
@@ -49,6 +50,7 @@ type Product = {
     description: string;
     short_description: string;
     long_description: string;
+    brand: { id: number; name: string };
     categories: { id: number; name: string }[];
     tags: { id: number; name: string }[];
     prices: { id: number, price: number, price_discount: number }[];
@@ -77,6 +79,7 @@ const ProductList = () => {
 
     const [filterData, setFilterData] = useState<Record<string, any>>({
         search: '', // Arama için alan ekleniyor
+        brands: [],
         categories: [],
         tags: [],
         min_price: '',
@@ -84,6 +87,7 @@ const ProductList = () => {
         min_price_discount: '',
         max_price_discount: ''
     });
+    const [brands, setBrands] = useState([]); // Markalar
     const [categories, setCategories] = useState([]); // Üst kategoriler
     const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
 
@@ -182,6 +186,13 @@ const ProductList = () => {
         try {
             const response = await ProductService.getFiltersData();
 
+            setBrands(
+                response.data.brands.map((brand: any) => ({
+                    value: brand.id,
+                    label: brand.name
+                }))
+            );
+
             setCategories(
                 response.data.categories.map((category: any) => ({
                     value: category.id,
@@ -202,6 +213,9 @@ const ProductList = () => {
     const prepareFilters = (filters: Record<string, any>) => {
         const preparedFilters = { ...filters };
 
+        if (filters.brands) {
+            preparedFilters.brands = filters.brands.map((brand: SelectOptionsType) => brand.value);
+        }
         // Categories ve Tags'ı ID dizisine dönüştür
         if (filters.categories) {
             preparedFilters.categories = filters.categories.map((category: SelectOptionsType) => category.value);
@@ -312,14 +326,35 @@ const ProductList = () => {
                     </div>
                     <Collapse in={isFilterOpen} >
                         <div className="flex flex-col gap-5 my-5 filter-product-list">
-                            <div className="w-full">
-                                <input type="text" className="form-input" placeholder="Arama Yap..."
-                                       value={filterData.search}
-                                       onChange={(e) =>
-                                           setFilterData((prevData) => ({
-                                               ...prevData,
-                                               search: e.target.value
-                                           }))} />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <input type="text" className="form-input" placeholder="Arama Yap..."
+                                           value={filterData.search}
+                                           onChange={(e) =>
+                                               setFilterData((prevData) => ({
+                                                   ...prevData,
+                                                   search: e.target.value
+                                               }))} />
+                                </div>
+                                <div>
+                                    <Select
+                                        value={filterData.brands}
+                                        isMulti
+                                        components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
+                                        options={brands}
+                                        className="basic-multi-select"
+                                        placeholder="Markalar"
+                                        classNamePrefix="select"
+                                        name="brands"
+                                        onChange={(selectedOptions) =>
+                                            setFilterData((prevData) => ({
+                                                ...prevData,
+                                                brands: selectedOptions
+                                            }))
+                                        }
+                                    />
+                                </div>
+
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="text-right">
@@ -466,6 +501,17 @@ const ProductList = () => {
                                         <div
                                             dangerouslySetInnerHTML={{ __html: record.long_description.substring(0, 30) }} />
                                     </Tooltip>
+                                )
+                            },
+                            {
+                                accessor: 'brand',
+                                title: 'Marka',
+                                sortable: false,
+                                hidden: hideCols.includes('brand'),
+                                render: (record: Product) => (
+                                    <div className="flex flex-wrap gap-1">
+                                        {record?.brand?.name}
+                                    </div>
                                 )
                             },
                             {
