@@ -4,6 +4,8 @@ import TagAdd from '../pages/tag/TagAdd';
 import TagList from '../pages/tag/TagList';
 import ProductAdd from '../pages/product/ProductAdd';
 import ProductList from '../pages/product/ProductList';
+import BrandAdd from '../pages/brand/BrandAdd';
+import BrandList from '../pages/brand/BrandList';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const CategoryAdd = lazy(() => import('../pages/category/CategoryAdd'));
@@ -55,6 +57,27 @@ const routes = [
         path: '/etiketler',
         name: 'TagList',
         element: <TagList />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/markalar/ekle',
+        name: 'BrandAdd',
+        element: <BrandAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/markalar/:id/duzenle',
+        name: 'BrandEdit',
+        element: <BrandAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/markalar',
+        name: 'BrandList',
+        element: <BrandList />,
         layout: 'default',
         protected: true
     },

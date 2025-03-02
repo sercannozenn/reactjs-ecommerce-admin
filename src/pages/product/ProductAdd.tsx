@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Select, { ActionMeta, MultiValue } from 'react-select';
+import Select, { ActionMeta, MultiValue, SingleValue } from 'react-select';
 import makeAnimated from 'react-select/animated';
 import { SlugHelper } from '../../helpers/helpers';
 import Swal from 'sweetalert2';
@@ -21,6 +21,10 @@ type Category = {
     id: number;
     name: string;
 };
+type Brand = {
+    id: number;
+    name: string;
+};
 type SelectOptionsType = {
     value: number,
     label: string
@@ -37,6 +41,7 @@ type FormDataType = {
     tag_ids: SelectOptionsType[];
     name: string;
     slug: string;
+    brand_id: number|null;
     short_description: string;
     long_description: string;
     stock: number;
@@ -68,6 +73,7 @@ const ProductAdd = () => {
         tag_ids: [],
         name: '',
         slug: '',
+        brand_id: null,
         short_description: '',
         long_description: '',
         stock: 0,
@@ -83,6 +89,7 @@ const ProductAdd = () => {
         featured_image: ''
     });
     const [categories, setCategories] = useState([]); // Üst kategoriler
+    const [brands, setBrands] = useState<SelectOptionsType[]>([]); // Markalar
     const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
     const [errors, setErrors] = useState<Record<string, string[]>>({}); // Validation hataları için state
     const { id } = useParams<{ id: string }>(); // id urlden alınır.
@@ -101,7 +108,11 @@ const ProductAdd = () => {
                     setCategories(response.data.categories.map((category: Category) => ({
                         value: category.id,
                         label: category.name
-                    }))); // Kategorileri dönüştür
+                    })));
+                    setBrands(response.data.brands.map((brand: Brand) => ({
+                        value: brand.id,
+                        label: brand.name
+                    })));
                 }
             } catch (error) {
                 console.error('Veriler alınırken hata oluştu:', error);
@@ -144,6 +155,10 @@ const ProductAdd = () => {
                     value: category.id,
                     label: category.name
                 }))); // Kategorileri dönüştür
+                setBrands(response.brands.map((brand: Brand) => ({
+                    value: brand.id,
+                    label: brand.name
+                }))); // Markaları dönüştür
             }).catch((error) => {
                 console.log(error);
                 Swal.fire({
@@ -239,7 +254,6 @@ const ProductAdd = () => {
             featured_image: id
         }));
     };
-
     // Görseli silme
     const handleRemoveImage = (id: string) => {
         // Silinecek görselin URL'ini temizle
@@ -254,8 +268,6 @@ const ProductAdd = () => {
             featured_image: prev.featured_image === id ? '' : prev.featured_image
         }));
     };
-
-
     const freshFormData = () => {
         setFormData(
             {
@@ -263,6 +275,7 @@ const ProductAdd = () => {
                 tag_ids: [],
                 name: '',
                 slug: '',
+                brand_id: null,
                 short_description: '',
                 long_description: '',
                 stock: 0,
@@ -290,7 +303,10 @@ const ProductAdd = () => {
         }
     };
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        if ((name === 'price' || name === 'stock' || name === 'price_discount') && value.startsWith("0")){
+                value = value.slice(1);
+        }
         setFormData(prev => ({
             ...prev,
             [name]: value === null ? '' : value
@@ -468,7 +484,35 @@ const ProductAdd = () => {
                         Otomatik olarak oluşturulacaktır. İsterseniz müdahale edebilirsiniz.
                         </span>
                     </div>
+                    <div className="mb-5">
+                        <Select
+                            value={brands.find(brand => brand.value === formData.brand_id) || null}
+                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
+                            options={brands}
+                            className="basic-single-select"
+                            placeholder="Ürün Marka"
+                            classNamePrefix="select"
+                            name="brand_id"
+                            onChange={(newValue: SingleValue<SelectOptionsType> | MultiValue<SelectOptionsType>, actionMeta: ActionMeta<SelectOptionsType>) => {
+                                if (newValue && !Array.isArray(newValue)) { // Eğer newValue bir dizi değilse ve null değilse
+                                    const singleValue = newValue as SingleValue<SelectOptionsType>; // Türü kesinleştir
+                                    if (singleValue) { // singleValue'nun null olmadığını kontrol et
+                                        setFormData((prevData) => ({
+                                            ...prevData,
+                                            brand_id: singleValue.value // Seçili markanın ID'sini ayarla
+                                        }));
+                                    }
+                                } else {
+                                    setFormData((prevData) => ({
+                                        ...prevData,
+                                        brand_id: null // Seçim temizlendiğinde
+                                    }));
+                                }
+                            }}
 
+                        />
+                        {errors.category_ids && <p className="text-red-500 text-xs mt-1">{errors.category_ids[0]}</p>}
+                    </div>
                     <div className="mb-5">
                         <Select
                             value={formData.category_ids}
@@ -497,6 +541,10 @@ const ProductAdd = () => {
                         />
                         {errors.tags && <p className="text-red-500 text-xs mt-1">{errors.tags[0]}</p>}
                     </div>
+                    <div className="mb-5"></div>
+
+
+
 
                     <div className="mb-5">
                         <h5 className="font-semibold text-lg dark:text-white-light mb-4">Kısa Açıklama</h5>
@@ -579,7 +627,7 @@ const ProductAdd = () => {
                                name="price"
                                min="0" // Negatif değerleri engellemek için
                                step="0.01" // Ondalık basamaklara izin vermek için
-                               value={formData.price || 0}
+                               value={formData.price}
                                onChange={handleInputChange}
                         />
                         {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price[0]}</p>}
