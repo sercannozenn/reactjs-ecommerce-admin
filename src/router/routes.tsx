@@ -6,6 +6,8 @@ import ProductAdd from '../pages/product/ProductAdd';
 import ProductList from '../pages/product/ProductList';
 import BrandAdd from '../pages/brand/BrandAdd';
 import BrandList from '../pages/brand/BrandList';
+import SliderList from '../pages/slider/SliderList';
+import SliderAdd from '../pages/slider/SliderAdd';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const CategoryAdd = lazy(() => import('../pages/category/CategoryAdd'));
@@ -99,6 +101,27 @@ const routes = [
         path: '/urunler',
         name: 'ProductList',
         element: <ProductList />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/slider/ekle',
+        name: 'SliderAdd',
+        element: <SliderAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/slider/:id/duzenle',
+        name: 'SliderEdit',
+        element: <SliderAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/sliders',
+        name: 'SliderList',
+        element: <SliderList />,
         layout: 'default',
         protected: true
     },
