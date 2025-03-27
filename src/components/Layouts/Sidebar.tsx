@@ -130,6 +130,34 @@ const Sidebar = () => {
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            <li className="menu nav-item">
+                                <button type="button"
+                                        className={`${currentMenu === 'slider' ? 'active' : ''} nav-link group w-full`}
+                                        onClick={() => toggleMenu('slider')}>
+                                    <div className="flex items-center">
+                                        <IconMenuComponents className="group-hover:!text-primary shrink-0" />
+                                        <span
+                                            className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                            Slider Yönetimi
+                                        </span>
+                                    </div>
+
+                                    <div className={currentMenu !== 'slider' ? 'rtl:rotate-90 -rotate-90' : ''}>
+                                        <IconCaretDown />
+                                    </div>
+                                </button>
+
+                                <AnimateHeight duration={300} height={currentMenu === 'slider' ? 'auto' : 0}>
+                                    <ul className="sub-menu text-gray-500">
+                                        <li>
+                                            <NavLink to={route('SliderList')} >Slider Listesi</NavLink>
+                                        </li>
+                                        <li>
+                                            <NavLink to={route('SliderAdd')} >Slider Ekleme</NavLink>
+                                        </li>
+                                    </ul>
+                                </AnimateHeight>
+                            </li>
 
                             <li className="menu nav-item">
                                 <button type="button"

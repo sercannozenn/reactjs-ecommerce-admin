@@ -9,7 +9,6 @@ import { useDispatch } from 'react-redux';
 import { ProductService } from '../../api/services/ProductService';
 import { JoditEditorComponent } from '../../components/Editors/JoditEditor';
 import { DropEvent, useDropzone, FileRejection, Accept } from 'react-dropzone';
-import Image from 'quill/formats/image';
 
 
 // const animatedComponents = makeAnimated();
