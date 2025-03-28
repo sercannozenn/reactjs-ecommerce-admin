@@ -1,9 +1,30 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useRouteNavigator } from '../../utils/RouteHelper';
 import { SliderService } from '../../api/services/SliderService';
 import { useDropzone } from 'react-dropzone';
 import IconX from '../../components/Icon/IconX';
 import Swal from 'sweetalert2';
+// Ace Editor importları
+import AceEditor from "react-ace";
+
+// Temel modları import et
+import "ace-builds/src-noconflict/mode-css";
+import "ace-builds/src-noconflict/theme-monokai";
+
+// Worker'ları import et
+import "ace-builds/src-noconflict/worker-css";
+
+// Ace için gerekli ek bileşenleri import et
+import "ace-builds/src-noconflict/ext-language_tools";
+import ace from "ace-builds";
+
+// Worker yolunu ayarla
+ace.config.set('basePath', '/node_modules/ace-builds/src-noconflict/');
+ace.config.set('modePath', '/node_modules/ace-builds/src-noconflict/');
+ace.config.set('themePath', '/node_modules/ace-builds/src-noconflict/');
+ace.config.set('workerPath', '/node_modules/ace-builds/src-noconflict/');
+
 
 type SliderFormData = {
     path: File | null;
@@ -38,9 +59,10 @@ const initialFormData: SliderFormData = {
 };
 
 const SliderAdd = () => {
+    const navigateToRoute = useRouteNavigator();
+
     const [errors, setErrors] = useState<Record<string, string[]>>({});
     const { id } = useParams();
-    const navigate = useNavigate();
     const [formData, setFormData] = useState<SliderFormData>(initialFormData);
     const [preview, setPreview] = useState<string | null>(null);
 
@@ -63,7 +85,12 @@ const SliderAdd = () => {
             setErrors((prev) => ({ ...prev, [name]: [] }));
         }
     };
-
+    const handleCssChange = (field: "row_1_css" | "row_2_css" | "button_css", value: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value, // Değişen alanı güncelle
+        }));
+    };
     const handleRemoveImage = () => {
         setFormData({ ...formData, path: null });
         setPreview(null);
@@ -120,7 +147,7 @@ const SliderAdd = () => {
                 result = await SliderService.create(data);
                 Swal.fire('Başarılı', `Slider eklendi. ID: ${result.data?.id}`, 'success');
             }
-            navigate('/slider');
+            navigateToRoute('SliderList');
         } catch (error: any) {
             if (error.response && error.response.status === 422) {
                 setErrors(error.response.data.errors);
@@ -138,7 +165,7 @@ const SliderAdd = () => {
                         {id ? 'Slider Güncelle' : 'Slider Ekle'}
                     </h5>
                 </div>
-                <form className="grid xl:grid-cols-2 gap-6 grid-cols-1" onSubmit={handleSubmit}>
+                <form className="grid xl:grid-cols-3 gap-6 grid-cols-1" onSubmit={handleSubmit}>
                     <div className="mb-5">
                         <input
                             type="text"
@@ -152,26 +179,45 @@ const SliderAdd = () => {
                     </div>
                     <div className="mb-5">
                         <input
-                            type="text"
+                            type="color"
                             placeholder="1. Satır Renk"
                             className={`form-input ${errors.row_1_color ? 'border-red-500' : ''}`}
                             name="row_1_color"
                             value={formData.row_1_color}
                             onChange={handleChange}
                         />
+                        <p style={{ color: formData.row_1_color}}>1. Yazı Seçilen Renk: {formData.row_1_text}</p>
                         {errors.row_1_color && <p className="text-red-500 text-xs mt-1">{errors.row_1_color[0]}</p>}
                     </div>
                     <div className="mb-5">
-                        <input
-                            type="text"
-                            placeholder="1. Satır CSS"
-                            className={`form-input ${errors.row_1_css ? 'border-red-500' : ''}`}
+                        <AceEditor
+                            mode="css"
+                            onChange={(value) => handleCssChange("row_1_css", value)}
                             name="row_1_css"
+                            theme="monokai"
+                            fontSize={14}
+                            lineHeight={19}
+                            showPrintMargin={true}
+                            showGutter={true}
+                            highlightActiveLine={true}
                             value={formData.row_1_css}
-                            onChange={handleChange}
+                            width="100½"
+                            height="200px"
+                            setOptions={{
+                                enableBasicAutocompletion: false,
+                                enableLiveAutocompletion: false,
+                                enableSnippets: false,
+                                enableMobileMenu: true,
+                                showLineNumbers: true,
+                                tabSize: 2,}}
+                            placeholder="1.satır yazı css"
                         />
+                        <span className="badge bg-info block text-xs hover:top-0">
+                            1. satırın yazısı için css kodunuzu ihtiyaç durumunda bu alana ekleyebilirsiniz.
+                        </span>
                         {errors.row_1_css && <p className="text-red-500 text-xs mt-1">{errors.row_1_css[0]}</p>}
                     </div>
+
                     <div className="mb-5">
                         <input
                             type="text"
@@ -185,26 +231,45 @@ const SliderAdd = () => {
                     </div>
                     <div className="mb-5">
                         <input
-                            type="text"
+                            type="color"
                             placeholder="2. Satır Renk"
                             className={`form-input ${errors.row_2_color ? 'border-red-500' : ''}`}
                             name="row_2_color"
                             value={formData.row_2_color}
                             onChange={handleChange}
                         />
+                        <p style={{ color: formData.row_2_color}}>2. Yazı Seçilen Renk: {formData.row_2_text}</p>
                         {errors.row_2_color && <p className="text-red-500 text-xs mt-1">{errors.row_2_color[0]}</p>}
                     </div>
                     <div className="mb-5">
-                        <input
-                            type="text"
-                            placeholder="2. Satır CSS"
-                            className={`form-input ${errors.row_2_css ? 'border-red-500' : ''}`}
+                        <AceEditor
+                            mode="css"
+                            onChange={(value) => handleCssChange("row_2_css", value)}
                             name="row_2_css"
+                            theme="monokai"
+                            fontSize={14}
+                            lineHeight={19}
+                            showPrintMargin={true}
+                            showGutter={true}
+                            highlightActiveLine={true}
                             value={formData.row_2_css}
-                            onChange={handleChange}
+                            width="100½"
+                            height="200px"
+                            setOptions={{
+                                enableBasicAutocompletion: false,
+                                enableLiveAutocompletion: false,
+                                enableSnippets: false,
+                                enableMobileMenu: true,
+                                showLineNumbers: true,
+                                tabSize: 2,}}
+                            placeholder="2.satır yazı css"
                         />
+                        <span className="badge bg-info block text-xs hover:top-0">
+                            2. satırın yazısı için css kodunuzu ihtiyaç durumunda bu alana ekleyebilirsiniz.
+                        </span>
                         {errors.row_2_css && <p className="text-red-500 text-xs mt-1">{errors.row_2_css[0]}</p>}
                     </div>
+
                     <div className="mb-5">
                         <input
                             type="text"
@@ -216,6 +281,48 @@ const SliderAdd = () => {
                         />
                         {errors.button_text && <p className="text-red-500 text-xs mt-1">{errors.button_text[0]}</p>}
                     </div>
+                    <div className="mb-5">
+                        <input
+                            type="color"
+                            placeholder="Buton Renk"
+                            className={`form-input ${errors.button_color ? 'border-red-500' : ''}`}
+                            name="button_color"
+                            value={formData.button_color}
+                            onChange={handleChange}
+                        />
+                        <p style={{ color: formData.button_color}}>Button Yazı Seçilen Renk: {formData.button_text}</p>
+                        {errors.button_color && <p className="text-red-500 text-xs mt-1">{errors.button_color[0]}</p>}
+                    </div>
+                    <div className="mb-5">
+                        <AceEditor
+                            mode="css"
+                            onChange={(value) => handleCssChange("button_css", value)}
+                            name="button_css"
+                            theme="monokai"
+                            fontSize={14}
+                            lineHeight={19}
+                            showPrintMargin={true}
+                            showGutter={true}
+                            highlightActiveLine={true}
+                            value={formData.row_2_css}
+                            width="100½"
+                            height="200px"
+                            setOptions={{
+                                enableBasicAutocompletion: false,
+                                enableLiveAutocompletion: false,
+                                enableSnippets: false,
+                                enableMobileMenu: true,
+                                showLineNumbers: true,
+                                tabSize: 2,}}
+                            placeholder="Button yazı css"
+                        />
+                        <span className="badge bg-info block text-xs hover:top-0">
+                            Buttonun yazısı için css kodunuzu ihtiyaç durumunda bu alana ekleyebilirsiniz.
+                        </span>
+                        {errors.button_css && <p className="text-red-500 text-xs mt-1">{errors.button_css[0]}</p>}
+                    </div>
+
+
                     <div className="mb-5">
                         <input
                             type="text"
@@ -240,28 +347,6 @@ const SliderAdd = () => {
                         {errors.button_target && <p className="text-red-500 text-xs mt-1">{errors.button_target[0]}</p>}
                     </div>
                     <div className="mb-5">
-                        <input
-                            type="text"
-                            placeholder="Buton Renk"
-                            className={`form-input ${errors.button_color ? 'border-red-500' : ''}`}
-                            name="button_color"
-                            value={formData.button_color}
-                            onChange={handleChange}
-                        />
-                        {errors.button_color && <p className="text-red-500 text-xs mt-1">{errors.button_color[0]}</p>}
-                    </div>
-                    <div className="mb-5">
-                        <input
-                            type="text"
-                            placeholder="Buton CSS"
-                            className={`form-input ${errors.button_css ? 'border-red-500' : ''}`}
-                            name="button_css"
-                            value={formData.button_css}
-                            onChange={handleChange}
-                        />
-                        {errors.button_css && <p className="text-red-500 text-xs mt-1">{errors.button_css[0]}</p>}
-                    </div>
-                    <div className="">
                         <label className="flex items-center cursor-pointer">
                             <input
                                 type="checkbox"
@@ -274,7 +359,7 @@ const SliderAdd = () => {
                         </label>
                     </div>
 
-                    <div className="col-span-2">
+                    <div className="col-span-3">
                         <hr className="mb-5 border-info" />
                         <div className="flex items-center justify-between mb-5">
                             <h5 className="font-semibold text-lg dark:text-white-light">Slider Görseli</h5>
@@ -300,7 +385,7 @@ const SliderAdd = () => {
                         )}
                     </div>
 
-                    <div className="col-span-2">
+                    <div className="col-span-3">
                         <hr className="my-5 border-gray-300" />
                         <div className="flex justify-center">
                             <button type="submit" className="btn btn-info hover:btn-success w-full">
