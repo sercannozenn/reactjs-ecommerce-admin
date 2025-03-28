@@ -121,11 +121,14 @@ export const ProductService = {
             (Object.keys(data) as Array<keyof AddDataType>).forEach(key => {
                 if (key !== 'images') {
                     const value = data[key];
-                    if (key === 'category_ids' || key === 'tag_ids' || key === 'existing_images') {
-                        formData.append(key, JSON.stringify(value));
-                    } else {
-                        formData.append(key, String(value));
+                    if (value !== null && value !== undefined){
+                        if (key === 'category_ids' || key === 'tag_ids' || key === 'existing_images') {
+                            formData.append(key, JSON.stringify(value));
+                        } else {
+                            formData.append(key, String(value));
+                        }
                     }
+
                 }
             });
             console.log(data);

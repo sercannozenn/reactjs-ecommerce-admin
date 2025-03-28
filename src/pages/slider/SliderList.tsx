@@ -36,10 +36,37 @@ const SliderList = () => {
             showCancelButton: true,
             confirmButtonText: 'Evet, sil',
             cancelButtonText: 'Vazgeç'
-        }).then(async result => {
-            if (result.isConfirmed) {
-                await SliderService.delete(item.id);
-                fetchData();
+        }).then(async (result) => {
+            if (result.value) {
+                try {
+                    await SliderService.delete(item.id);
+                    fetchData();
+
+                    Swal.fire({
+                        title: 'Silindi!',
+                        text: item.id + " ID'li slider silindi.",
+                        icon: 'success',
+                        confirmButtonText: 'Tamam',
+                        customClass: { popup: 'sweet-alerts' }
+                    });
+                } catch (error) {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: item.id + " ID'li slider silinemedi. Hata Alındı.",
+                        icon: 'error',
+                        confirmButtonText: 'Tamam',
+                        customClass: { popup: 'sweet-alerts' }
+                    });
+                }
+
+            } else {
+                Swal.fire({
+                    title: 'Bilgi!',
+                    text: 'Herhangi bir işlem yapılmadı.',
+                    icon: 'info',
+                    confirmButtonText: 'Tamam',
+                    customClass: { popup: 'sweet-alerts' }
+                });
             }
         });
     };

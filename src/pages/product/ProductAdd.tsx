@@ -9,6 +9,7 @@ import { useDispatch } from 'react-redux';
 import { ProductService } from '../../api/services/ProductService';
 import { JoditEditorComponent } from '../../components/Editors/JoditEditor';
 import { DropEvent, useDropzone, FileRejection, Accept } from 'react-dropzone';
+import { useRouteNavigator } from '../../utils/RouteHelper';
 
 
 // const animatedComponents = makeAnimated();
@@ -66,6 +67,7 @@ const customNoOptionsMessage = () => {
 
 const ProductAdd = () => {
     const dispatch = useDispatch();
+    const navigateToRoute = useRouteNavigator();
 
     const [formData, setFormData] = useState<FormDataType>({
         category_ids: [],
@@ -108,10 +110,10 @@ const ProductAdd = () => {
                         value: category.id,
                         label: category.name
                     })));
-                    setBrands(response.data.brands.map((brand: Brand) => ({
+                    setBrands([{ label: "Marka seçiniz" } ,...response.data.brands.map((brand: Brand) => ({
                         value: brand.id,
                         label: brand.name
-                    })));
+                    }))]);
                 }
             } catch (error) {
                 console.error('Veriler alınırken hata oluştu:', error);
@@ -154,10 +156,10 @@ const ProductAdd = () => {
                     value: category.id,
                     label: category.name
                 }))); // Kategorileri dönüştür
-                setBrands(response.brands.map((brand: Brand) => ({
+                setBrands([{ label: "Marka seçiniz" } ,...response.brands.map((brand: Brand) => ({
                     value: brand.id,
                     label: brand.name
-                }))); // Markaları dönüştür
+                }))]); // Markaları dönüştür
             }).catch((error) => {
                 console.log(error);
                 Swal.fire({
@@ -439,6 +441,7 @@ const ProductAdd = () => {
                         popup: 'sweet-alerts'
                     }
                 });
+                navigateToRoute('ProductList');
             }
         } catch (error: any) {
             if (error.response?.status === 422) {
