@@ -56,7 +56,26 @@ type FormDataType = {
     existing_images: [];
     featured_image: string;
 };
-
+const initialFormState: FormDataType = {
+    category_ids: [],
+    tag_ids: [],
+    name: '',
+    slug: '',
+    brand_id: null,
+    short_description: '',
+    long_description: '',
+    stock: 0,
+    stock_alert_limit: 10,
+    is_active: true,
+    price: 0,
+    price_discount: 0,
+    keywords: '',
+    seo_description: '',
+    author: '',
+    images: [],
+    existing_images: [],
+    featured_image: ''
+};
 const customNoOptionsMessage = () => {
     return (
         <div style={{ textAlign: 'center', color: 'gray' }}>
@@ -69,37 +88,20 @@ const ProductAdd = () => {
     const dispatch = useDispatch();
     const navigateToRoute = useRouteNavigator();
 
-    const [formData, setFormData] = useState<FormDataType>({
-        category_ids: [],
-        tag_ids: [],
-        name: '',
-        slug: '',
-        brand_id: null,
-        short_description: '',
-        long_description: '',
-        stock: 0,
-        stock_alert_limit: 10,
-        is_active: true,
-        price: 0,
-        price_discount: 0,
-        keywords: '',
-        seo_description: '',
-        author: '',
-        images: [],
-        existing_images: [],
-        featured_image: ''
-    });
+    const { id } = useParams<{ id: string }>(); // id urlden alınır.
+
+    const [formData, setFormData] = useState<FormDataType>(initialFormState);
     const [categories, setCategories] = useState([]); // Üst kategoriler
     const [brands, setBrands] = useState<SelectOptionsType[]>([]); // Markalar
     const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
     const [errors, setErrors] = useState<Record<string, string[]>>({}); // Validation hataları için state
-    const { id } = useParams<{ id: string }>(); // id urlden alınır.
     const [isEdit, setIsEdit] = useState(false);
+
     const pageTitle = 'Ürün ' + (isEdit ? 'Güncelleme' : 'Ekleme');
 
     useEffect(() => {
         dispatch(setPageTitle(pageTitle));
-    });
+    }, []);
     useEffect(() => {
         const fetchCreateData = async () => {
             try {
@@ -183,7 +185,6 @@ const ProductAdd = () => {
             slug: SlugHelper.generate(formData.name ?? '')
         }));
     }, [formData.name]);
-
     useEffect(() => {
         return () => {
             // Cleanup fonksiyonu
@@ -270,28 +271,7 @@ const ProductAdd = () => {
         }));
     };
     const freshFormData = () => {
-        setFormData(
-            {
-                category_ids: [],
-                tag_ids: [],
-                name: '',
-                slug: '',
-                brand_id: null,
-                short_description: '',
-                long_description: '',
-                stock: 0,
-                stock_alert_limit: 10,
-                is_active: true,
-                price: 0,
-                price_discount: 0,
-                keywords: '',
-                seo_description: '',
-                author: '',
-                images: [],
-                existing_images: [],
-                featured_image: ''
-            }
-        );
+        setFormData(initialFormState);
         setErrors({});
     };
     const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
