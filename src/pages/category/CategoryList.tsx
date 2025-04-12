@@ -65,7 +65,7 @@ const CategoryList = () => {
         Swal.fire({
             icon: 'warning',
             title: 'Kategori Sil',
-            text: name + ' adlı  kategoriyi silmek istediğinize emin misiniz?',
+            text: name + ' adlı  kategoriyi silmek istediğinize emin misiniz? Kategori silindiğinde tüm alt kategoriler ve bunlara bağlı ürünler de silinecektir.',
             showCancelButton: true,
             confirmButtonText: 'Evet',
             cancelButtonText: 'Hayır',
