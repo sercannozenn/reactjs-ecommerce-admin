@@ -10,6 +10,8 @@ import SliderList from '../pages/slider/SliderList';
 import SliderAdd from '../pages/slider/SliderAdd';
 import AnnouncementAdd from '../pages/announcement/AnnouncementAdd';
 import AnnouncementList from '../pages/announcement/AnnouncementList';
+import SettingsAdd from '../pages/settings/SettingsAdd';
+import SettingsList from '../pages/settings/SettingsList';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const CategoryAdd = lazy(() => import('../pages/category/CategoryAdd'));
@@ -145,6 +147,27 @@ const routes = [
         path: '/duyuru',
         name: 'AnnouncementList',
         element: <AnnouncementList />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/ayarlar',
+        name: 'SettingsList',
+        element: <SettingsList />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/ayarlar/ekle',
+        name: 'SettingsAdd',
+        element: <SettingsAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/ayarlar/:id/duzenle',
+        name: 'SettingsEdit',
+        element: <SettingsAdd />,
         layout: 'default',
         protected: true
     },
