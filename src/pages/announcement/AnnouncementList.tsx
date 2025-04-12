@@ -1,6 +1,6 @@
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import Swal from 'sweetalert2';
 import { setPageTitle } from '../../store/themeConfigSlice';
 import IconXCircle from '../../components/Icon/IconXCircle';
@@ -35,9 +35,9 @@ const AnnouncementList = () => {
     const [loading, setLoading] = useState(false);
     const [records, setRecords] = useState<AnnouncementRecord[]>([]);
     const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({ columnAccessor: 'id', direction: 'desc' });
-    const [search, setSearch] = useState('');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [hideCols, setHideCols] = useState<any>([]);
+    const [refreshLoad, setRefreshLoad] = useState(false);
 
     const [filterData, setFilterData] = useState<Record<string, any>>({
         search: '',
@@ -79,7 +79,7 @@ const AnnouncementList = () => {
     useEffect(() => {
         dispatch(setPageTitle('Duyurular'));
         fetchData();
-    }, [page, pageSize, sortStatus, filterData]);
+    }, [page, pageSize, sortStatus, filterData, refreshLoad]);
 
     const handleStatusChange = async (id: number) => {
         try {
@@ -91,7 +91,7 @@ const AnnouncementList = () => {
     };
 
     const handleDelete = async (id: number, title: string) => {
-        const confirm = await Swal.fire({
+        Swal.fire({
             title: 'Duyuru Etkinlik Sil',
             text: title + ' başlıklı kaydı silmek istediğinize emin misiniz?',
             icon: 'warning',
@@ -102,28 +102,38 @@ const AnnouncementList = () => {
             customClass: {
                 popup: 'sweet-alerts'
             }
-        });
-        if (confirm.isConfirmed) {
-            try {
-                await AnnouncementService.delete(id);
-                fetchData();
+        }).then(async (result) => {
+            if (result.value) {
+                try {
+                    await AnnouncementService.delete(id);
+                    setRefreshLoad(prev => !prev);
+
+                    Swal.fire({
+                        title: 'Silindi!',
+                        text: title + ' başlıklı duyuru etkinlik silindi.',
+                        icon: 'success',
+                        confirmButtonText: 'Tamam',
+                        customClass: { popup: 'sweet-alerts' }
+                    });
+                } catch (error) {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: title + ' başlıklı duyuru etkinlik silinemedi. Hata Alındı.',
+                        icon: 'error',
+                        confirmButtonText: 'Tamam',
+                        customClass: { popup: 'sweet-alerts' }
+                    });
+                }
+            } else {
                 Swal.fire({
-                    title: 'Silindi!',
-                    text: title + ' başlıklı duyuru etkinlik silindi.',
-                    icon: 'success',
-                    confirmButtonText: 'Tamam',
-                    customClass: { popup: 'sweet-alerts' }
-                });
-            } catch (error) {
-                Swal.fire({
-                    title: 'Hata!',
-                    text: title + ' başlıklı duyuru etkinlik silinemedi. Hata Alındı.',
-                    icon: 'error',
+                    title: 'Bilgi!',
+                    text: 'Herhangi bir işlem yapılmadı.',
+                    icon: 'info',
                     confirmButtonText: 'Tamam',
                     customClass: { popup: 'sweet-alerts' }
                 });
             }
-        }
+        });
     };
     const handleEdit = (id: number) => {
         navigateToRoute('AnnouncementEdit', { id });
@@ -180,7 +190,7 @@ const AnnouncementList = () => {
 
                             <div className="dropdown my-5">
                                 <Dropdown
-                                    placement={`'bottom-start'`}
+                                    placement="bottom-start"
                                     btnClassName="!flex items-center border font-semibold border-white-light dark:border-[#253b5c] rounded-md px-4 py-2 text-sm dark:bg-[#1b2e4b] dark:text-white-dark"
                                     button={
                                         <>
