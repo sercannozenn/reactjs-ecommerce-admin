@@ -264,66 +264,73 @@ const ProductList = () => {
             </style>
 
             <div className="panel mt-6">
-                <div className="flex md:items-center md:flex-row flex-col mb-5 gap-5">
+                <div className="flex flex-col gap-4 mb-5">
+
                     <h5 className="font-semibold text-lg dark:text-white-light">Ürün Listesi</h5>
-                    <div className="ltr:ml-auto rtl:mr-auto flex gap-2">
-                        <button
-                            type="button"
-                            className={`btn ${isFilterOpen ? 'btn-primary' : 'btn-outline-primary'} gap-2`}
-                            onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        >
-                            <IconSettings />
-                            Filtreler
-                        </button>
-                        {/*<button type="button" className="btn btn-primary gap-2" onClick="">*/}
-                        {/*    <IconPlus />*/}
-                        {/*    Yeni Ekle*/}
-                        {/*</button>*/}
+
+                    <div className="flex justify-between items-center flex-wrap gap-4">
+                        <div className="dropdown my-5">
+                            <Dropdown
+                                placement={`${isRtl ? 'bottom-end' : 'bottom-start'}`}
+                                btnClassName="!flex items-center border font-semibold border-white-light dark:border-[#253b5c] rounded-md px-4 py-2 text-sm dark:bg-[#1b2e4b] dark:text-white-dark"
+                                button={
+                                    <>
+                                        <span className="ltr:mr-1 rtl:ml-1">Sütunlar</span>
+                                        <IconCaretDown className="w-5 h-5" />
+                                    </>
+                                }
+                            >
+                                <ul className="!min-w-[190px]">
+                                    {cols.map((col, i) => {
+                                        return (
+                                            <li
+                                                key={i}
+                                                className="flex flex-col"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                }}
+                                            >
+                                                <div className="flex items-center px-4 py-1">
+                                                    <label className="cursor-pointer mb-0">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={!hideCols.includes(col.accessor)}
+                                                            className="form-checkbox"
+                                                            defaultValue={col.accessor}
+                                                            onChange={(event: any) => {
+                                                                setHideCols(event.target.value);
+                                                                showHideColumns(col.accessor, event.target.checked);
+                                                            }}
+                                                        />
+                                                        <span className="ltr:ml-2 rtl:mr-2">{col.title}</span>
+                                                    </label>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </Dropdown>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                className={`btn ${isFilterOpen ? 'btn-primary' : 'btn-outline-primary'} gap-2`}
+                                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            >
+                                <IconSettings />
+                                Filtreler
+                            </button>
+                            <button type="button" className="btn btn-primary gap-2" onClick={() => navigateToRoute('ProductAdd')}>
+                                <IconPlus />
+                                Yeni Ekle
+                            </button>
+                        </div>
                     </div>
+
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="dropdown my-5">
-                        <Dropdown
-                            placement={`${isRtl ? 'bottom-end' : 'bottom-start'}`}
-                            btnClassName="!flex items-center border font-semibold border-white-light dark:border-[#253b5c] rounded-md px-4 py-2 text-sm dark:bg-[#1b2e4b] dark:text-white-dark"
-                            button={
-                                <>
-                                    <span className="ltr:mr-1 rtl:ml-1">Sütunlar</span>
-                                    <IconCaretDown className="w-5 h-5" />
-                                </>
-                            }
-                        >
-                            <ul className="!min-w-[140px]">
-                                {cols.map((col, i) => {
-                                    return (
-                                        <li
-                                            key={i}
-                                            className="flex flex-col"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                            }}
-                                        >
-                                            <div className="flex items-center px-4 py-1">
-                                                <label className="cursor-pointer mb-0">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={!hideCols.includes(col.accessor)}
-                                                        className="form-checkbox"
-                                                        defaultValue={col.accessor}
-                                                        onChange={(event: any) => {
-                                                            setHideCols(event.target.value);
-                                                            showHideColumns(col.accessor, event.target.checked);
-                                                        }}
-                                                    />
-                                                    <span className="ltr:ml-2 rtl:mr-2">{col.title}</span>
-                                                </label>
-                                            </div>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </Dropdown>
-                    </div>
+                    <div></div>
                     <Collapse in={isFilterOpen} >
                         <div className="flex flex-col gap-5 my-5 filter-product-list">
                             <div className="grid grid-cols-2 gap-4">
@@ -354,7 +361,6 @@ const ProductList = () => {
                                         }
                                     />
                                 </div>
-
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="text-right">
@@ -450,7 +456,6 @@ const ProductList = () => {
 
                         </div>
                     </Collapse>
-
                 </div>
 
 

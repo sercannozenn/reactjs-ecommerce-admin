@@ -8,6 +8,8 @@ import BrandAdd from '../pages/brand/BrandAdd';
 import BrandList from '../pages/brand/BrandList';
 import SliderList from '../pages/slider/SliderList';
 import SliderAdd from '../pages/slider/SliderAdd';
+import AnnouncementAdd from '../pages/announcement/AnnouncementAdd';
+import AnnouncementList from '../pages/announcement/AnnouncementList';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const CategoryAdd = lazy(() => import('../pages/category/CategoryAdd'));
@@ -122,6 +124,27 @@ const routes = [
         path: '/sliders',
         name: 'SliderList',
         element: <SliderList />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/duyuru/ekle',
+        name: 'AnnouncementAdd',
+        element: <AnnouncementAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/duyuru/:id/duzenle',
+        name: 'AnnouncementEdit',
+        element: <AnnouncementAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/duyuru',
+        name: 'AnnouncementList',
+        element: <AnnouncementList />,
         layout: 'default',
         protected: true
     },

@@ -247,7 +247,7 @@ const CategoryAdd = () => {
                             components={{ ...animatedComponents, NoOptionsMessage: customNoOptionsMessage }}
                             options={tagsOptions}
                             className="basic-multi-select"
-                            placeholder="Ürün Etiketi"
+                            placeholder="Kategori Etiketi"
                             classNamePrefix="select"
                             name="tags"
                             onChange={handleSelectChange}
