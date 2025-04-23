@@ -1,5 +1,5 @@
 import api from '../api';
-import { string } from 'yup';
+
 type ImageType = {
     id: string; // Yüklenen dosya için unique ID veya veritabanından gelen ID
     file?: File; // Sadece yeni yüklenen dosyalar için

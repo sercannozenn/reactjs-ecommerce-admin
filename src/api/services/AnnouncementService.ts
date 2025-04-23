@@ -73,7 +73,7 @@ export const AnnouncementService = {
 
     changeStatus: async (id: number) => {
         try {
-            const response = await api.patch(`admin/announcements/${id}/toggle-status`);
+            const response = await api.put(`admin/announcement/${id}/change-status`);
             return response.data;
         } catch (error) {
             console.error('Error changing announcement status:', error);

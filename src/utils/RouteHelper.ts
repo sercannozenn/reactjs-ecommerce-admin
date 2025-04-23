@@ -1,10 +1,7 @@
 import { routes } from '../router/routes';
-// import { useNavigate } from 'react-router-dom';
 
-export const route = (
-    name: string,
-    params?: Record<string, any>
-): string => {
+export const route = (name: string, params?: Record<string, any>): string => {
+
     const route = routes.find((r) => r.name === name);
 
     if (!route) {
@@ -24,8 +21,6 @@ export const route = (
 };
 
 export const useRouteNavigator = () => {
-    // const navigate = useNavigate();
-
     const navigateToRoute = (name: string, params?: Record<string, any>): void => {
         const route = routes.find((r) => r.name === name);
 
