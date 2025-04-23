@@ -362,7 +362,7 @@ const SliderAdd = () => {
                     <div className="col-span-3">
                         <hr className="mb-5 border-info" />
                         <div className="flex items-center justify-between mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">Slider Görseli</h5>
+                            <h5 className="font-semibold text-lg dark:text-white-light">Slider Görseli (Önerilen Boyut: 1920x500)</h5>
                         </div>
                         <div {...getRootProps()} className={`col-span-2 border-dashed border-2 p-4 rounded-md cursor-pointer ${errors.path ? 'border-red-500' : 'border-gray-400'}`}>
                             <input {...getInputProps()} />

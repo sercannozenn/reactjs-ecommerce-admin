@@ -37,7 +37,8 @@ const cols = [
     { accessor: 'categories', title: 'Kategoriler' },
     { accessor: 'tags', title: 'Etiketler' },
     { accessor: 'price', title: 'Ana Fiyat' },
-    { accessor: 'price_discount', title: 'İndirimli Son Fiyat' },
+    { accessor: 'price_discount', title: 'İndirimli Fiyat' },
+    { accessor: 'final_price', title: 'Son Güncel Fiyat' },
     { accessor: 'stock', title: 'Stok' },
     { accessor: 'is_active', title: 'Durum' },
     { accessor: 'created_at', title: 'Oluşturma Tarihi' }
@@ -50,10 +51,12 @@ type Product = {
     description: string;
     short_description: string;
     long_description: string;
+    final_price: number;
     brand: { id: number; name: string };
     categories: { id: number; name: string }[];
     tags: { id: number; name: string }[];
     prices: { id: number, price: number, price_discount: number }[];
+    latest_price: { id: number, price: number, price_discount: number };
     stock: number;
     is_active: number;
     formatted_created_at: string;
@@ -556,19 +559,25 @@ const ProductList = () => {
                                 sortable: true,
                                 hidden: hideCols.includes('price'),
                                 render: (record: Product) => (
-                                    <span>{record.prices[0].price.toLocaleString('tr-TR', {
-                                        style: 'currency',
-                                        currency: 'TRY'
-                                    })}</span>
+                                    <span>{record.latest_price.price}</span>
                                 )
                             },
                             {
                                 accessor: 'price_discount',
-                                title: 'İndirimli Son Fiyat',
+                                title: 'İndirimli Fiyat',
                                 sortable: true,
                                 hidden: hideCols.includes('price_discount'),
                                 render: (record: Product) => (
-                                    <span>{record.prices[0].price_discount?.toLocaleString('tr-TR', {
+                                    <span>{record.latest_price.price_discount}</span>
+                                )
+                            },
+                            {
+                                accessor: 'final_price',
+                                title: 'Son Güncel Fiyat',
+                                sortable: true,
+                                hidden: hideCols.includes('final_price'),
+                                render: (record: Product) => (
+                                    <span>{record.final_price?.toLocaleString('tr-TR', {
                                         style: 'currency',
                                         currency: 'TRY'
                                     })}</span>

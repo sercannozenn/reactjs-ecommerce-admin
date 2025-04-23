@@ -12,6 +12,8 @@ import AnnouncementAdd from '../pages/announcement/AnnouncementAdd';
 import AnnouncementList from '../pages/announcement/AnnouncementList';
 import SettingsAdd from '../pages/settings/SettingsAdd';
 import SettingsList from '../pages/settings/SettingsList';
+import ProductDiscountAdd from '../pages/product_discount/ProductDiscountAdd';
+import ProductDiscountList from '../pages/product_discount/ProductDiscountList';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const CategoryAdd = lazy(() => import('../pages/category/CategoryAdd'));
@@ -168,6 +170,33 @@ const routes = [
         path: '/ayarlar/:id/duzenle',
         name: 'SettingsEdit',
         element: <SettingsAdd />,
+        layout: 'default',
+        protected: true
+    },
+
+
+
+
+
+
+    {
+        path: '/urun-indirim',
+        name: 'ProductDiscountList',
+        element: <ProductDiscountList />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/urun-indirim/ekle',
+        name: 'ProductDiscountAdd',
+        element: <ProductDiscountAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/urun-indirim/:id/duzenle',
+        name: 'ProductDiscountEdit',
+        element: <ProductDiscountAdd />,
         layout: 'default',
         protected: true
     },
