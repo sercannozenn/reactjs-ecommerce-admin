@@ -1,21 +1,24 @@
-import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import React, { useEffect, useState } from 'react';
+import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useDispatch, useSelector } from 'react-redux';
 import { IRootState } from '../../store';
 import Swal from 'sweetalert2';
 import Dropdown from '../../components/Dropdown';
 import { setPageTitle } from '../../store/themeConfigSlice';
+import { ProductService } from '../../api/services/ProductService';
+import { useRouteNavigator } from '../../utils/RouteHelper';
+import { Box, Collapse, Tooltip } from '@mantine/core';
+import Select, { ActionMeta, MultiValue } from 'react-select';
+
+import makeAnimated from 'react-select/animated';
+
 import IconCaretDown from '../../components/Icon/IconCaretDown';
 import IconXCircle from '../../components/Icon/IconXCircle';
 import IconEdit from '../../components/Icon/IconEdit';
-import { ProductService } from '../../api/services/ProductService';
-import { useRouteNavigator } from '../../utils/RouteHelper';
 import IconRefresh from '../../components/Icon/IconRefresh';
 import IconSettings from '../../components/Icon/IconSettings';
 import IconPlus from '../../components/Icon/IconPlus';
-import { Box, Collapse, Tooltip } from '@mantine/core';
-import makeAnimated from 'react-select/animated';
-import Select, { ActionMeta, MultiValue } from 'react-select';
+
 import '../../assets/css/style.css';
 
 const customNoOptionsMessage = () => {
@@ -27,22 +30,7 @@ const customNoOptionsMessage = () => {
 };
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
-const cols = [
-    { accessor: 'id', title: 'ID' },
-    { accessor: 'name', title: 'Ürün Adı' },
-    { accessor: 'slug', title: 'Slug' },
-    { accessor: 'short_description', title: 'Kısa Açıklama' },
-    { accessor: 'long_description', title: 'Uzun Açıklama' },
-    { accessor: 'brand', title: 'Marka' },
-    { accessor: 'categories', title: 'Kategoriler' },
-    { accessor: 'tags', title: 'Etiketler' },
-    { accessor: 'price', title: 'Ana Fiyat' },
-    { accessor: 'price_discount', title: 'İndirimli Fiyat' },
-    { accessor: 'final_price', title: 'Son Güncel Fiyat' },
-    { accessor: 'stock', title: 'Stok' },
-    { accessor: 'is_active', title: 'Durum' },
-    { accessor: 'created_at', title: 'Oluşturma Tarihi' }
-];
+
 
 type Product = {
     id: number;
@@ -75,9 +63,9 @@ const ProductList = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
-    // const [search, setSearch] = useState('');
     const [rowsPerPage, setRowsPerPage] = useState(PAGE_SIZES[1]);
     const [refreshLoad, setRefreshLoad] = useState(false);
+    const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({ columnAccessor: 'id', direction: 'asc' });
 
 
     const [filterData, setFilterData] = useState<Record<string, any>>({
@@ -94,14 +82,25 @@ const ProductList = () => {
     const [categories, setCategories] = useState([]); // Üst kategoriler
     const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
 
-    const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
-        columnAccessor: 'id',
-        direction: 'asc'
-    });
 
     const [hideCols, setHideCols] = useState<any>([]);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-
+    const cols = [
+        { accessor: 'id', title: 'ID' },
+        { accessor: 'name', title: 'Ürün Adı' },
+        { accessor: 'slug', title: 'Slug' },
+        { accessor: 'short_description', title: 'Kısa Açıklama' },
+        { accessor: 'long_description', title: 'Uzun Açıklama' },
+        { accessor: 'brand', title: 'Marka' },
+        { accessor: 'categories', title: 'Kategoriler' },
+        { accessor: 'tags', title: 'Etiketler' },
+        { accessor: 'price', title: 'Ana Fiyat' },
+        { accessor: 'price_discount', title: 'İndirimli Fiyat' },
+        { accessor: 'final_price', title: 'Son Güncel Fiyat' },
+        { accessor: 'stock', title: 'Stok' },
+        { accessor: 'is_active', title: 'Durum' },
+        { accessor: 'created_at', title: 'Oluşturma Tarihi' }
+    ];
     const showHideColumns = (col: any, value: any) => {
         if (hideCols.includes(col)) {
             setHideCols((col: any) => hideCols.filter((d: any) => d !== col));
@@ -230,6 +229,7 @@ const ProductList = () => {
 
         return preparedFilters;
     };
+
     useEffect(() => {
         dispatch(setPageTitle('Ürün Listesi'));
     });
