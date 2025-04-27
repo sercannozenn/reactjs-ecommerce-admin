@@ -100,9 +100,9 @@ const ProductDiscountList = () => {
         { accessor: 'actions', title: 'İşlemler', hidden: hideCols.includes('actions'),
             render: (record: ProductDiscountListType) => (
                 <div className="flex gap-2">
-                    <button onClick={() => navigateToRoute('ProductDiscountEdit', { id: record.id })} className="btn btn-sm btn-info">
-                        <IconEdit />
-                    </button>
+                    {/*<button onClick={() => navigateToRoute('ProductDiscountEdit', { id: record.id })} className="btn btn-sm btn-info">*/}
+                    {/*    <IconEdit />*/}
+                    {/*</button>*/}
                     <button
                         onClick={() => handleView(record.id)}
                         className="btn btn-sm btn-secondary"
