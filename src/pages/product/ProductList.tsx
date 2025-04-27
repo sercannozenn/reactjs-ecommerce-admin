@@ -119,6 +119,8 @@ const ProductList = () => {
           <td>${h.price.toFixed(2)} ₺</td>
           <td>${h.price_discount.toFixed(2)} ₺</td>
           <td>${h.discount_name}</td>
+          <td>${h.updated_by}</td>
+          <td>${h.reason}</td>
           <td>${new Date(h.from).toLocaleString('tr-TR')}</td>
           <td>${h.until ? new Date(h.until).toLocaleString('tr-TR') : '-'}</td>
         </tr>
@@ -130,7 +132,9 @@ const ProductList = () => {
             <tr>
               <th style="padding:4px; border:1px solid #ddd">Baz Fiyat</th>
               <th style="padding:4px; border:1px solid #ddd">İndirimli Fiyat</th>
-              <th style="padding:4px; border:1px solid #ddd">Sebep</th>
+              <th style="padding:4px; border:1px solid #ddd">Bilgi</th>
+              <th style="padding:4px; border:1px solid #ddd">Kim</th>
+              <th style="padding:4px; border:1px solid #ddd">İşlem</th>
               <th style="padding:4px; border:1px solid #ddd">Başlangıç</th>
               <th style="padding:4px; border:1px solid #ddd">Bitiş</th>
             </tr>
@@ -145,7 +149,7 @@ const ProductList = () => {
                 icon: 'info',
                 title: 'Ürün Fiyat Geçmişi',
                 html,
-                width: 800,
+                width: 900,
                 confirmButtonText: 'Kapat',
             });
         } catch {
