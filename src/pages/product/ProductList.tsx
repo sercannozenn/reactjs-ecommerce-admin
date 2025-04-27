@@ -18,6 +18,7 @@ import IconEdit from '../../components/Icon/IconEdit';
 import IconRefresh from '../../components/Icon/IconRefresh';
 import IconSettings from '../../components/Icon/IconSettings';
 import IconPlus from '../../components/Icon/IconPlus';
+import IconEye from '../../components/Icon/IconEye';
 
 import '../../assets/css/style.css';
 
@@ -109,6 +110,48 @@ const ProductList = () => {
         }
     };
 
+    const handleViewHistory = async (productId: number) => {
+        try {
+            const history = await ProductService.getPriceHistory(productId);
+            // HTML tablo satırlarını oluştur
+            const rows = history.map((h: any) => `
+        <tr>
+          <td>${h.price.toFixed(2)} ₺</td>
+          <td>${h.price_discount.toFixed(2)} ₺</td>
+          <td>${h.discount_name}</td>
+          <td>${new Date(h.from).toLocaleString('tr-TR')}</td>
+          <td>${h.until ? new Date(h.until).toLocaleString('tr-TR') : '-'}</td>
+        </tr>
+      `).join('');
+
+            const html = `
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="padding:4px; border:1px solid #ddd">Baz Fiyat</th>
+              <th style="padding:4px; border:1px solid #ddd">İndirimli Fiyat</th>
+              <th style="padding:4px; border:1px solid #ddd">Sebep</th>
+              <th style="padding:4px; border:1px solid #ddd">Başlangıç</th>
+              <th style="padding:4px; border:1px solid #ddd">Bitiş</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows || '<tr><td colspan="5" style="text-align:center; padding:8px">Kayıt bulunamadı</td></tr>'}
+          </tbody>
+        </table>
+      `;
+
+            await Swal.fire({
+                icon: 'info',
+                title: 'Ürün Fiyat Geçmişi',
+                html,
+                width: 800,
+                confirmButtonText: 'Kapat',
+            });
+        } catch {
+            Swal.fire('Hata', 'Geçmiş alınamadı.', 'error');
+        }
+    };
     const handleDelete = (id: number, name: string) => {
         Swal.fire({
             icon: 'warning',
@@ -625,6 +668,13 @@ const ProductList = () => {
                                         </button>
                                         <button onClick={() => handleDelete(record.id, record.name)} className="p-2">
                                             <IconXCircle />
+                                        </button>
+                                        <button
+                                            onClick={() => handleViewHistory(record.id)}
+                                            className="btn btn-sm btn-secondary"
+                                            title="Fiyat Geçmişini Gör"
+                                        >
+                                            <IconEye />
                                         </button>
                                     </div>
                                 )
