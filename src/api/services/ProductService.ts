@@ -183,5 +183,14 @@ export const ProductService = {
             console.error('Error changing product status:', error);
             throw error;
         }
-    }
+    },
+    getPriceHistory: async (id: number): Promise<any[]> => {
+        try {
+        const response = await api.get<{ data: any[] }>(`/admin/product/${id}/price-history`);
+        return response.data.data;
+        } catch (error) {
+            console.error('Error changing product status:', error);
+            throw error;
+        }
+    },
 };

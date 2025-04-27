@@ -17,6 +17,7 @@ import IconSettings from '../../components/Icon/IconSettings';
 import IconCaretDown from '../../components/Icon/IconCaretDown';
 import IconRefresh from '../../components/Icon/IconRefresh';
 import { ProductDiscountListType } from '../../types/discount';
+import IconEye from '../../components/Icon/IconEye';
 
 
 const customNoOptionsMessage = () => {
@@ -102,6 +103,13 @@ const ProductDiscountList = () => {
                     <button onClick={() => navigateToRoute('ProductDiscountEdit', { id: record.id })} className="btn btn-sm btn-info">
                         <IconEdit />
                     </button>
+                    <button
+                        onClick={() => handleView(record.id)}
+                        className="btn btn-sm btn-secondary"
+                        title="Etkilenen Ürünleri Gör"
+                    >
+                        <IconEye />
+                    </button>
                 </div>
             )
         }
@@ -115,8 +123,49 @@ const ProductDiscountList = () => {
         }
     };
 
+    const handleView = async (discountId: number) => {
+        try {
+            const products: any[] = await ProductDiscountService.getAffectedProducts(discountId);
+            console.log(products);
+            const html = products.map(p => {
+                const rows = p.histories.map((h:any) => `
+                <tr>
+                    <td>${h.price.toFixed(2)} ₺</td>
+                    <td>${h.price_discount.toFixed(2)} ₺</td>
+                    <td>${new Date(h.from).toLocaleString('tr-TR')}</td>
+                    <td>${h.until ? new Date(h.until).toLocaleString('tr-TR') : '-'}</td>
+                </tr>
+            `).join('');
 
-    const loadDiscounts = async () => {
+                return `
+                <h4>${p.name}</h4>
+                <table style="width:100%; border:1px solid #ddd; border-collapse:collapse; margin-bottom:16px;">
+                    <thead>
+                        <tr>
+                            <th style="border:1px solid #ddd; padding:4px">Baz Fiyat (₺)</th>
+                            <th style="border:1px solid #ddd; padding:4px">İndirimli Fiyat (₺)</th>
+                            <th style="border:1px solid #ddd; padding:4px">Başlangıç</th>
+                            <th style="border:1px solid #ddd; padding:4px">Bitiş</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows || '<tr><td colspan="4" style="text-align:center; padding:8px">Kayıt bulunamadı</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+            }).join('');
+
+            await Swal.fire({
+                icon: 'info',
+                title: 'İndirim Dönemi Fiyat Geçmişi',
+                html,
+                width: 800,
+                confirmButtonText: 'Kapat',
+            });
+        } catch {
+            Swal.fire('Hata', 'Ürünlerin geçmişi alınamadı.', 'error');
+        }
+    };    const loadDiscounts = async () => {
         setLoading(true);
         try {
             const response = await ProductDiscountService.list(page, rowsPerPage, sortStatus, filterData);

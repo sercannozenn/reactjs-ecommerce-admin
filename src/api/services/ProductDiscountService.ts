@@ -118,15 +118,22 @@ export const ProductDiscountService = {
     },
     changeStatus: async (id: number) => {
         try {
-            const response = await api.put(
-                `/admin/product-discount/${id}/change-status`
-            );
+            const response = await api.put(`/admin/product-discount/${id}/change-status`);
             return response.data.data;
         } catch (error: any) {
             console.error('Error changing discount status:', error);
             // 422 gibi validation hatalarında error.response.data.errors.discount[0]
             const msg = error.response?.data?.errors?.discount?.[0] || 'Durum değiştirilemedi.';
             throw new Error(msg);
+        }
+    },
+    getAffectedProducts: async (id: number): Promise<any[]> => {
+        try {
+            const response = await api.get<{ data: any[] }>(`/admin/product-discount/${id}/affected-products`);
+            return response.data.data;
+        } catch (error) {
+            console.error('Error fetching affected products:', error);
+            throw error;
         }
     },
 };
