@@ -118,11 +118,15 @@ export const ProductDiscountService = {
     },
     changeStatus: async (id: number) => {
         try {
-            const response = await api.put(`admin/product/${id}/change-status`);
-            return response.data;
-        } catch (error) {
-            console.error('Error changing product status:', error);
-            throw error;
+            const response = await api.put(
+                `/admin/product-discount/${id}/change-status`
+            );
+            return response.data.data;
+        } catch (error: any) {
+            console.error('Error changing discount status:', error);
+            // 422 gibi validation hatalarında error.response.data.errors.discount[0]
+            const msg = error.response?.data?.errors?.discount?.[0] || 'Durum değiştirilemedi.';
+            throw new Error(msg);
         }
-    }
+    },
 };

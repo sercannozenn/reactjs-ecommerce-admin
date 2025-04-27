@@ -34,3 +34,16 @@ export type ProductDiscountPayload = {
     discount_type?: DiscountAmountType;
     discount_amount?: number;
 };
+
+export type ProductDiscountListType = {
+    id: number;
+    name: string;
+    description?: string;
+    target_type: DiscountTargetType;
+    discount_type: DiscountAmountType;
+    discount_amount: number;
+    priority: number;
+    discount_start: string;
+    discount_end: string;
+    is_active: boolean;
+};
