@@ -6,6 +6,11 @@ type ImageType = {
     image_path: string; // Hem yeni hem de var olan görsellerin yolunu saklar
     isNew: boolean; // Yeni eklenmiş mi yoksa önceden var olan mı
 };
+export interface SizeData {
+    size: string;
+    stock: number;
+    stock_alert: number;
+}
 
 type AddDataType = {
     category_ids: number[];
@@ -14,8 +19,7 @@ type AddDataType = {
     name: string;
     short_description: string;
     long_description: string;
-    stock: number;
-    stock_alert_limit: number;
+    sizes: SizeData[],
     is_active: boolean;
     keywords: string;
     seo_description: string;
@@ -83,7 +87,7 @@ export const ProductService = {
             (Object.keys(data) as Array<keyof AddDataType>).forEach(key => {
                 if (key !== 'images') {
                     const value = data[key];
-                    if (key === 'category_ids' || key === 'tag_ids') {
+                    if (key === 'category_ids' || key === 'tag_ids' || key === 'sizes') {
                         formData.append(key, JSON.stringify(value));
                     } else {
                         formData.append(key, String(value));
@@ -122,7 +126,7 @@ export const ProductService = {
                 if (key !== 'images') {
                     const value = data[key];
                     if (value !== null && value !== undefined){
-                        if (key === 'category_ids' || key === 'tag_ids' || key === 'existing_images') {
+                        if (key === 'category_ids' || key === 'tag_ids' || key === 'existing_images' || key === 'sizes') {
                             formData.append(key, JSON.stringify(value));
                         } else {
                             formData.append(key, String(value));
