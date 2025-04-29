@@ -10,7 +10,10 @@ import { ProductService } from '../../api/services/ProductService';
 import { JoditEditorComponent } from '../../components/Editors/JoditEditor';
 import { DropEvent, useDropzone, FileRejection, Accept } from 'react-dropzone';
 import { useRouteNavigator } from '../../utils/RouteHelper';
-
+import IconMinusCircle from '../../components/Icon/IconMinusCircle';
+import IconPlusCircle from '../../components/Icon/IconPlusCircle';
+import IconFolderPlus from '../../components/Icon/IconFolderPlus';
+import { Button, Input } from '@mantine/core';
 
 // const animatedComponents = makeAnimated();
 type Tag = {
@@ -44,8 +47,7 @@ type FormDataType = {
     brand_id: number|null;
     short_description: string;
     long_description: string;
-    stock: number;
-    stock_alert_limit: number;
+    sizes: SizeType[],
     is_active: boolean;
     price: number;
     price_discount: number;
@@ -56,6 +58,11 @@ type FormDataType = {
     existing_images: [];
     featured_image: string;
 };
+type SizeType = {
+    size: string;
+    stock: number;
+    stock_alert: number;
+};
 const initialFormState: FormDataType = {
     category_ids: [],
     tag_ids: [],
@@ -64,8 +71,7 @@ const initialFormState: FormDataType = {
     brand_id: null,
     short_description: '',
     long_description: '',
-    stock: 0,
-    stock_alert_limit: 10,
+    sizes: [],
     is_active: true,
     price: 0,
     price_discount: 0,
@@ -313,6 +319,28 @@ const ProductAdd = () => {
         }));
     };
 
+    const handleAddSize = () => {
+        setFormData(prev => ({
+            ...prev,
+            sizes: [...prev.sizes, { size: '', stock: 0, stock_alert: 0 }]
+        }));
+    };
+    const handleRemoveSize = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            sizes: prev.sizes.filter((_, i) => i !== index)
+        }));
+    };
+    const handleSizeChange = (index: number, field: keyof SizeType, value: string | number) => {
+        setFormData(prev => {
+            const newSizes = [...prev.sizes];
+            newSizes[index] = {
+                ...newSizes[index], [field]: field === 'size' ? (value as string) : parseInt(value as string, 10),
+            };
+            return { ...prev, sizes: newSizes };
+        });
+    };
+
     const validateForm = (): Record<string, string[]> => {
         const errors: Record<string, string[]> = {};
 
@@ -331,9 +359,21 @@ const ProductAdd = () => {
             errors.category_ids = ['En az bir kategori seçilmelidir'];
         }
 
-        // Stok kontrolü
-        if (formData.stock < 0) {
-            errors.stock = ['Stok değeri 0 veya daha büyük olmalıdır'];
+        formData.sizes.forEach((s, i) => {
+            if (!s.size.trim()) {
+                errors[`sizes.${i}.size`] = ['Beden adı zorunludur'];
+            }
+            if (s.stock < 0) {
+                errors[`sizes.${i}.stock`] = ['Stok değeri 0 veya daha büyük olmalıdır'];
+            }
+            if (s.stock_alert < 0) {
+                errors[`sizes.${i}.stock_alert`] = ['Uyarı eşiği 0 veya daha büyük olmalıdır'];
+            }
+        });
+
+        // En az bir beden girilmeli
+        if (formData.sizes.length === 0) {
+            errors.sizes = ['En az bir beden eklemelisiniz'];
         }
 
         // Fiyat kontrolü
@@ -390,7 +430,12 @@ const ProductAdd = () => {
             category_ids: formData.category_ids.map(cat => cat.value),
             tag_ids: formData.tag_ids.map(tag => tag.value),
             images: formData.images.filter((img: ImageType): img is ImageType & {file: File} => img.isNew && img.file !== undefined).map((img) => img), // Yeni yüklenen dosyalar
-            existing_images: formData.images.filter((img) => !img.isNew).map((img) => img.id) // Var olan görseller
+            existing_images: formData.images.filter((img) => !img.isNew).map((img) => img.id), // Var olan görseller
+            sizes: formData.sizes.map(s => ({
+                size:        s.size,
+                stock:       s.stock,
+                stock_alert: s.stock_alert,
+            })),
         };
 
         try {
@@ -573,27 +618,69 @@ const ProductAdd = () => {
                                 Ürün Stok Bilgileri
                             </h5>
                         </div>
+                        {/* Ürün Stok Bilgileri */}
+                        <div className="mb-4">
+                            {formData.sizes.map((s, idx) => (
+                                <div
+                                    key={idx}
+                                    className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4 w-full"
+                                >
+                                    {/* Beden */}
+                                    <div className="flex flex-col">
+                                        <label className="block text-sm font-medium mb-1">Beden</label>
+                                        <Input
+                                            className="w-full"
+                                            value={s.size}
+                                            onChange={e => handleSizeChange(idx, 'size', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Stok */}
+                                    <div className="flex flex-col">
+                                        <label className="block text-sm font-medium mb-1">Stok</label>
+                                        <Input
+                                            className="w-full"
+                                            type="number"
+                                            value={s.stock}
+                                            onChange={e => handleSizeChange(idx, 'stock', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Uyarı Eşiği */}
+                                    <div className="flex flex-col">
+                                        <label className="block text-sm font-medium mb-1">Uyarı Eşiği</label>
+                                        <Input
+                                            className="w-full"
+                                            type="number"
+                                            value={s.stock_alert}
+                                            onChange={e => handleSizeChange(idx, 'stock_alert', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Sil Butonu */}
+                                    <div className="flex justify-end">
+                                        <button
+                                            className="btn btn-danger w-full hover:btn-primary"
+                                            onClick={() => handleRemoveSize(idx)}
+                                        >
+                                            <IconMinusCircle className="h-4 w-4 me-2"  /> <span>Sil</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Satır Ekleme Butonu */}
+                            <button
+                                type="button"
+                                onClick={handleAddSize}
+                                className="mt-2 btn btn-success hover:btn-primary"
+                            >
+                                <IconPlusCircle className="h-4 w-4 me-2" /><span>Ekle</span>
+                            </button>
+                        </div>
                     </div>
-                    <div className="mb-5">
-                        <input type="text" placeholder="Ürün Stok" className="form-input"
-                               name="stock"
-                               value={formData.stock || 0}
-                               onChange={handleInputChange}
-                        />
-                        {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock[0]}</p>}
-                    </div>
-                    <div className="mb-5">
-                        <input type="text" placeholder="Ürün Stok Alt Limit Bildirimi" className="form-input"
-                               name="stock_alert_limit"
-                               value={formData.stock_alert_limit || 10}
-                               onChange={handleInputChange}
-                        />
-                        {errors.stock_alert_limit &&
-                            <p className="text-red-500 text-xs mt-1">{errors.stock_alert_limit[0]}</p>}
-                        <span className="badge bg-info block text-xs hover:top-0">
-                            Ürünün stok değeri belirteceğiniz değerin altına düştüğünde bilgilendirme yapılacaktır.
-                        </span>
-                    </div>
+
+
 
                     <div className="col-span-2">
                         <hr className="mb-5 border-info" />
