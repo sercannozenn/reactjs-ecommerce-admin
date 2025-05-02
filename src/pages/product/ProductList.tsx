@@ -98,7 +98,6 @@ const ProductList = () => {
         { accessor: 'price', title: 'Ana Fiyat' },
         { accessor: 'price_discount', title: 'İndirimli Fiyat' },
         { accessor: 'final_price', title: 'Son Güncel Fiyat' },
-        { accessor: 'stock', title: 'Stok' },
         { accessor: 'is_active', title: 'Durum' },
         { accessor: 'created_at', title: 'Oluşturma Tarihi' }
     ];
@@ -629,12 +628,6 @@ const ProductList = () => {
                                         currency: 'TRY'
                                     })}</span>
                                 )
-                            },
-                            {
-                                accessor: 'stock',
-                                title: 'Stok',
-                                sortable: true,
-                                hidden: hideCols.includes('stock')
                             },
                             {
                                 accessor: 'is_active',

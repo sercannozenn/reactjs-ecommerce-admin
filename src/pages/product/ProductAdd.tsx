@@ -32,6 +32,8 @@ type SelectOptionsType = {
     value: number,
     label: string
 }
+type GenderOption = { value: string; label: string }
+
 type ImageType = {
     id: string; // Yüklenen dosya için unique ID veya veritabanından gelen ID
     file?: File; // Sadece yeni yüklenen dosyalar için
@@ -57,12 +59,14 @@ type FormDataType = {
     images: ImageType[];
     existing_images: [];
     featured_image: string;
+    gender?: string | null;
 };
 type SizeType = {
     size: string;
     stock: number;
     stock_alert: number;
 };
+
 const initialFormState: FormDataType = {
     category_ids: [],
     tag_ids: [],
@@ -80,7 +84,8 @@ const initialFormState: FormDataType = {
     author: '',
     images: [],
     existing_images: [],
-    featured_image: ''
+    featured_image: '',
+    gender: null,
 };
 const customNoOptionsMessage = () => {
     return (
@@ -90,6 +95,28 @@ const customNoOptionsMessage = () => {
     );
 };
 
+const customMultiStyles = {
+    // Seçili değerlerin sarılmasına izin ver
+    valueContainer: (base: any) => ({
+        ...base,
+        flexWrap: 'wrap',
+        maxHeight: 'none',
+    }),
+    // Her bir tag kutucuğunu genişletebil
+    multiValue: (base: any) => ({
+        ...base,
+        margin: 2,
+        maxWidth: '100%',
+        whiteSpace: 'normal',
+    }),
+    // İç yazı normal akıp gitsin, ellipsis yok
+    multiValueLabel: (base: any) => ({
+        ...base,
+        whiteSpace: 'normal',
+        overflow: 'visible',
+        textOverflow: 'unset',
+    }),
+};
 const ProductAdd = () => {
     const dispatch = useDispatch();
     const navigateToRoute = useRouteNavigator();
@@ -100,6 +127,7 @@ const ProductAdd = () => {
     const [categories, setCategories] = useState([]); // Üst kategoriler
     const [brands, setBrands] = useState<SelectOptionsType[]>([]); // Markalar
     const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
+    const [genders, setGenders] = useState<GenderOption[]>([]);
     const [errors, setErrors] = useState<Record<string, string[]>>({}); // Validation hataları için state
     const [isEdit, setIsEdit] = useState(false);
 
@@ -122,6 +150,7 @@ const ProductAdd = () => {
                         value: brand.id,
                         label: brand.name
                     }))]);
+                    setGenders([{ label: "Cinsiyet" } ,...response.data.genders]);
                 }
             } catch (error) {
                 console.error('Veriler alınırken hata oluştu:', error);
@@ -168,6 +197,7 @@ const ProductAdd = () => {
                     value: brand.id,
                     label: brand.name
                 }))]); // Markaları dönüştür
+                setGenders([{ label: "Cinsiyet" } ,...response.genders]);
             }).catch((error) => {
                 console.log(error);
                 Swal.fire({
@@ -557,6 +587,7 @@ const ProductAdd = () => {
                     <div className="mb-5">
                         <Select
                             value={formData.tag_ids}
+                            styles={customMultiStyles}
                             isMulti
                             components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
                             options={tagsOptions}
@@ -566,9 +597,28 @@ const ProductAdd = () => {
                             name="tag_ids"
                             onChange={handleSelectChange} // Direkt olarak fonksiyonu verdik
                         />
-                        {errors.tags && <p className="text-red-500 text-xs mt-1">{errors.tags[0]}</p>}
+                        {errors.tag_ids && <p className="text-red-500 text-xs mt-1">{errors.tag_ids[0]}</p>}
                     </div>
-                    <div className="mb-5"></div>
+                    <div className="mb-5">
+                        <Select
+                            <GenderOption, false>
+                            value={genders.find(gender => gender.value === formData.gender) || null}
+                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
+                            options={genders}
+                            className="basic-single-select"
+                            placeholder="Cinsiyet"
+                            classNamePrefix="select"
+                            name="gender"
+                            onChange={(opt, _action) =>
+                                        setFormData(prev => ({
+                                                ...prev,
+                                            gender: opt?.value ?? null
+                                        }))
+                                    }
+
+                        />
+                        {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender[0]}</p>}
+                    </div>
 
 
 

@@ -27,6 +27,7 @@ type AddDataType = {
     images: ImageType[];
     existing_images: string[];
     featured_image: string;
+    gender?: string | null;
 };
 
 export const ProductService = {
@@ -196,5 +197,9 @@ export const ProductService = {
             console.error('Error changing product status:', error);
             throw error;
         }
+    },
+    getGenders: async (): Promise<string[]> => {
+        const res = await api.get('/product/genders');
+        return res.data;
     },
 };
