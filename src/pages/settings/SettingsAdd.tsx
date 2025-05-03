@@ -50,7 +50,7 @@ const SettingsAdd = () => {
         onDrop,
         multiple: false,
         accept: formData.key === 'favicon'
-            ? { 'image/x-icon': ['.ico'], 'image/png': ['.png'], 'image/svg+xml': ['.svg'] }
+            ? { 'image/x-icon': ['.ico'], 'image/png': ['.png'], 'image/jpg': ['.jpg'], 'image/svg+xml': ['.svg'] }
             : { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] },
     });
 
