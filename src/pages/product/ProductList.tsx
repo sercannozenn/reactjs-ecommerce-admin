@@ -21,6 +21,8 @@ import IconPlus from '../../components/Icon/IconPlus';
 import IconEye from '../../components/Icon/IconEye';
 
 import '../../assets/css/style.css';
+import IconCopy from '../../components/Icon/IconCopy';
+import IconShare from '../../components/Icon/IconShare';
 
 const customNoOptionsMessage = () => {
     return (
@@ -54,6 +56,7 @@ type SelectOptionsType = {
     value: number,
     label: string
 }
+const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
 
 const ProductList = () => {
     const dispatch = useDispatch();
@@ -149,7 +152,7 @@ const ProductList = () => {
                 title: 'Ürün Fiyat Geçmişi',
                 html,
                 width: 900,
-                confirmButtonText: 'Kapat',
+                confirmButtonText: 'Kapat'
             });
         } catch {
             Swal.fire('Hata', 'Geçmiş alınamadı.', 'error');
@@ -370,7 +373,8 @@ const ProductList = () => {
                                 <IconSettings />
                                 Filtreler
                             </button>
-                            <button type="button" className="btn btn-primary gap-2" onClick={() => navigateToRoute('ProductAdd')}>
+                            <button type="button" className="btn btn-primary gap-2"
+                                    onClick={() => navigateToRoute('ProductAdd')}>
                                 <IconPlus />
                                 Yeni Ekle
                             </button>
@@ -380,7 +384,7 @@ const ProductList = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div></div>
-                    <Collapse in={isFilterOpen} >
+                    <Collapse in={isFilterOpen}>
                         <div className="flex flex-col gap-5 my-5 filter-product-list">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -413,22 +417,22 @@ const ProductList = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="text-right">
-                                        <Select
-                                            value={filterData.categories}
-                                            isMulti
-                                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
-                                            options={categories}
-                                            className="basic-multi-select"
-                                            placeholder="Kategoriler"
-                                            classNamePrefix="select"
-                                            name="categories"
-                                            onChange={(selectedOptions) =>
-                                                setFilterData((prevData) => ({
-                                                    ...prevData,
-                                                    categories: selectedOptions
-                                                }))
-                                            }
-                                        />
+                                    <Select
+                                        value={filterData.categories}
+                                        isMulti
+                                        components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
+                                        options={categories}
+                                        className="basic-multi-select"
+                                        placeholder="Kategoriler"
+                                        classNamePrefix="select"
+                                        name="categories"
+                                        onChange={(selectedOptions) =>
+                                            setFilterData((prevData) => ({
+                                                ...prevData,
+                                                categories: selectedOptions
+                                            }))
+                                        }
+                                    />
                                 </div>
                                 <div className="text-right">
                                     <Select
@@ -666,6 +670,7 @@ const ProductList = () => {
                                         <button onClick={() => handleDelete(record.id, record.name)} className="p-2">
                                             <IconXCircle />
                                         </button>
+                                        <Tooltip label="Fiyat Geçmişini Gör">
                                         <button
                                             onClick={() => handleViewHistory(record.id)}
                                             className="btn btn-sm btn-secondary"
@@ -673,6 +678,26 @@ const ProductList = () => {
                                         >
                                             <IconEye />
                                         </button>
+                                        </Tooltip>
+                                        <Tooltip label="Tıklayarak ürünün linkini kopyalayabilirsiniz.">
+                                            <button
+                                                onClick={() => {
+                                                    const link = `${FRONTEND_URL}/urun/${record.slug}`;
+                                                    navigator.clipboard.writeText(link);
+                                                    Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Link Kopyalandı!',
+                                                        text: link,
+                                                        timer: 2000,
+                                                        showConfirmButton: false
+                                                    });
+                                                }}
+                                                className="btn btn-sm btn-success"
+                                            >
+                                                <IconShare />
+                                            </button>
+                                        </Tooltip>
+
                                     </div>
                                 )
                             }
