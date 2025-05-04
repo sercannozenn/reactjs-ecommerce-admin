@@ -14,6 +14,7 @@ import SettingsAdd from '../pages/settings/SettingsAdd';
 import SettingsList from '../pages/settings/SettingsList';
 import ProductDiscountAdd from '../pages/product_discount/ProductDiscountAdd';
 import ProductDiscountList from '../pages/product_discount/ProductDiscountList';
+import ProductDiscountHistory from '../pages/product/ProductDiscountHistory';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const CategoryAdd = lazy(() => import('../pages/category/CategoryAdd'));
@@ -100,6 +101,13 @@ const routes = [
         path: '/urunler/:id/duzenle',
         name: 'ProductEdit',
         element: <ProductAdd />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/urunler/:id/indirim-gecmisi',
+        name: 'ProductDiscountHistory',
+        element: <ProductDiscountHistory />,
         layout: 'default',
         protected: true
     },

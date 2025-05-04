@@ -671,13 +671,21 @@ const ProductList = () => {
                                             <IconXCircle />
                                         </button>
                                         <Tooltip label="Fiyat Geçmişini Gör">
-                                        <button
-                                            onClick={() => handleViewHistory(record.id)}
-                                            className="btn btn-sm btn-secondary"
-                                            title="Fiyat Geçmişini Gör"
-                                        >
-                                            <IconEye />
-                                        </button>
+                                            <button
+                                                onClick={() => handleViewHistory(record.id)}
+                                                className="btn btn-sm btn-secondary"
+                                                title="Fiyat Geçmişini Gör"
+                                            >
+                                                <IconEye />
+                                            </button>
+                                        </Tooltip>
+                                        <Tooltip label="Ürünün Deyalı Fiyat Geçmişini Gör">
+                                            <button
+                                                onClick={() => navigateToRoute('ProductDiscountHistory', { id: record.id })}
+                                                className="btn btn-sm btn-secondary"
+                                            >
+                                                <IconEye />
+                                            </button>
                                         </Tooltip>
                                         <Tooltip label="Tıklayarak ürünün linkini kopyalayabilirsiniz.">
                                             <button
