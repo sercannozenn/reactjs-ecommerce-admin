@@ -158,6 +158,10 @@ const ProductList = () => {
             Swal.fire('Hata', 'Geçmiş alınamadı.', 'error');
         }
     };
+    const handleViewHistoryDetail = (productId: number) => {
+        const url = `/urunler/${productId}/indirim-gecmisi`;
+        window.open(url, '_blank');
+    };
     const handleDelete = (id: number, name: string) => {
         Swal.fire({
             icon: 'warning',
@@ -664,29 +668,40 @@ const ProductList = () => {
                                 title: 'İşlemler',
                                 render: (record: Product) => (
                                     <div className="flex space-x-2">
-                                        <button onClick={() => handleEdit(record.id)} className="p-2">
-                                            <IconEdit />
-                                        </button>
-                                        <button onClick={() => handleDelete(record.id, record.name)} className="p-2">
-                                            <IconXCircle />
-                                        </button>
-                                        <Tooltip label="Fiyat Geçmişini Gör">
-                                            <button
-                                                onClick={() => handleViewHistory(record.id)}
-                                                className="btn btn-sm btn-secondary"
-                                                title="Fiyat Geçmişini Gör"
-                                            >
-                                                <IconEye />
-                                            </button>
-                                        </Tooltip>
-                                        <Tooltip label="Ürünün Deyalı Fiyat Geçmişini Gör">
-                                            <button
-                                                onClick={() => navigateToRoute('ProductDiscountHistory', { id: record.id })}
-                                                className="btn btn-sm btn-secondary"
-                                            >
-                                                <IconEye />
-                                            </button>
-                                        </Tooltip>
+                                        <div className="inline-flex rounded overflow-hidden border border-gray-300">
+                                            <Tooltip label="Ürünü Düzenle">
+                                                <button onClick={() => handleEdit(record.id)} className="px-3 py-2 bg-yellow-400 hover:bg-yellow-500 text-white">
+                                                    <IconEdit className="w-4 h-4" />
+                                                </button>
+                                            </Tooltip>
+
+                                            <Tooltip label="Ürünü Sil">
+                                                <button onClick={() => handleDelete(record.id, record.name)} className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white">
+                                                    <IconXCircle className="w-4 h-4" />
+                                                </button>
+                                            </Tooltip>
+                                        </div>
+
+                                        <div className="inline-flex rounded overflow-hidden border border-gray-300">
+                                            <Tooltip label="Fiyat Geçmişini Gör">
+                                                <button
+                                                    onClick={() => handleViewHistory(record.id)}
+                                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800"
+                                                >
+                                                    <IconEye className="w-4 h-4" />
+                                                </button>
+                                            </Tooltip>
+
+                                            <Tooltip label="Detaylı Geçmişi Yeni Sekmede Aç">
+                                                <button
+                                                    onClick={() => handleViewHistoryDetail(record.id)}
+                                                    className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white"
+                                                >
+                                                    <IconEye className="w-4 h-4" />
+                                                </button>
+                                            </Tooltip>
+                                        </div>
+
                                         <Tooltip label="Tıklayarak ürünün linkini kopyalayabilirsiniz.">
                                             <button
                                                 onClick={() => {
