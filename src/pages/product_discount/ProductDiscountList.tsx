@@ -194,7 +194,7 @@ const ProductDiscountList = () => {
                 )
             );
 
-            const statusText = updated.discountis_active ? 'Aktif' : 'Pasif';
+            const statusText = updated.discount.is_active ? 'Aktif' : 'Pasif';
             Swal.fire({
                 icon: 'success',
                 title: 'Başarılı!',

@@ -7,6 +7,8 @@ import IconX from '../../components/Icon/IconX';
 import Swal from 'sweetalert2';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.css';
+import { Turkish } from 'flatpickr/dist/l10n/tr.js';
+import dayjs from 'dayjs';
 
 // Temel modları import et
 import "ace-builds/src-noconflict/mode-css";
@@ -182,19 +184,20 @@ const AnnouncementAdd = () => {
                     <div className="mb-5">
                         <Flatpickr
                             name="date"
-                            data-enable-time
+                            placeholder="Etkinlik Duyuru Tarihi"
                             options={{
-                                enableTime: true,
-                                dateFormat: 'Y-m-d H:i',
+                                dateFormat: 'Y-m-d',
+                                locale: Turkish,
                             }}
                             value={formData.date}
                             className="form-input"
                             onChange={(selectedDates) => {
-                                const isoDate = selectedDates[0]?.toISOString().slice(0, 16).replace('T', ' ');
+                                const date = selectedDates[0];
+                                const formatted = dayjs(date).format('YYYY-MM-DD');
                                 handleChange({
                                     target: {
                                         name: 'date',
-                                        value: isoDate,
+                                        value: formatted,
                                         type: 'text',
                                         checked: false,
                                     },
@@ -251,6 +254,8 @@ const AnnouncementAdd = () => {
                             </p>
                         </div>
                         {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image[0]}</p>}
+                        <p className="text-red-500 text-xs mt-1">Görselin yüksekliği 400px ile 600px arasında kullanabilirsiniz. Önerilen Boyut: 600px</p>
+
                         {preview && (
                             <div className="mt-4 relative inline-block">
                                 <img src={preview} alt="Duyuru Etkinlik Önizleme" className="w-64 h-32 object-cover border rounded" />

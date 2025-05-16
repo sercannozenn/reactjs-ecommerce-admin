@@ -12,10 +12,8 @@ import { DropEvent, useDropzone, FileRejection, Accept } from 'react-dropzone';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 import IconMinusCircle from '../../components/Icon/IconMinusCircle';
 import IconPlusCircle from '../../components/Icon/IconPlusCircle';
-import IconFolderPlus from '../../components/Icon/IconFolderPlus';
 import { Button, Input } from '@mantine/core';
 
-// const animatedComponents = makeAnimated();
 type Tag = {
     id: number;
     name: string;
@@ -710,6 +708,7 @@ const ProductAdd = () => {
                                     {/* Sil Butonu */}
                                     <div className="flex justify-end">
                                         <button
+                                            type="button"
                                             className="btn btn-danger w-full hover:btn-primary"
                                             onClick={() => handleRemoveSize(idx)}
                                         >

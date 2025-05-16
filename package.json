@@ -35,6 +35,7 @@
         "ace-builds": "^1.39.0",
         "apexcharts": "^4.4.0",
         "axios": "^1.7.9",
+        "dayjs": "^1.11.13",
         "easymde": "^2.18.0",
         "formik": "^2.2.9",
         "highlight.js": "^11.6.0",

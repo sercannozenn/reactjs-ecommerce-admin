@@ -12,6 +12,8 @@ import { SelectOptionsType } from '../../types/common';
 import { ProductDiscountFormData, DiscountTargetType, DiscountAmountType } from '../../types/discount';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.css';
+import { Turkish } from 'flatpickr/dist/l10n/tr.js';
+import dayjs from 'dayjs';
 
 
 const discountTypeOptions = [
@@ -287,15 +289,17 @@ const ProductDiscountAdd = () => {
                             options={{
                                 enableTime: true,
                                 dateFormat: 'Y-m-d H:i',
+                                locale: Turkish,
                             }}
                             value={formData.discount_start}
                             className="form-input"
                             onChange={(selectedDates) => {
-                                const isoDate = selectedDates[0]?.toISOString().slice(0, 16).replace('T', ' ');
+                                const date = selectedDates[0];
+                                const formatted = dayjs(date).format('YYYY-MM-DD HH:mm');
                                 handleInputChange({
                                     target: {
                                         name: 'discount_start',
-                                        value: isoDate,
+                                        value: formatted,
                                         type: 'text',
                                         checked: false,
                                     },
@@ -314,15 +318,18 @@ const ProductDiscountAdd = () => {
                             options={{
                                 enableTime: true,
                                 dateFormat: 'Y-m-d H:i',
+                                locale: Turkish,
                             }}
                             value={formData.discount_end}
                             className="form-input"
                             onChange={(selectedDates) => {
-                                const isoDate = selectedDates[0]?.toISOString().slice(0, 16).replace('T', ' ');
+                                const date = selectedDates[0];
+                                const formatted = dayjs(date).format('YYYY-MM-DD HH:mm');
+
                                 handleInputChange({
                                     target: {
                                         name: 'discount_end',
-                                        value: isoDate,
+                                        value: formatted,
                                         type: 'text',
                                         checked: false,
                                     },
