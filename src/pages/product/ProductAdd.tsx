@@ -50,7 +50,7 @@ type FormDataType = {
     sizes: SizeType[],
     is_active: boolean;
     price: number;
-    price_discount: number;
+    price_discount: number|null;
     keywords: string;
     seo_description: string;
     author: string;
@@ -165,13 +165,13 @@ const ProductAdd = () => {
                 console.log(response);
                 const lastPrice = response.product.prices && response.product.prices.length > 0
                     ? response.product.prices[response.product.prices.length - 1]
-                    : { price: 0, price_discount: 0 };
+                    : { price: 0, price_discount: null };
                 setFormData((prev) => (
                     {
                         ...prev,
                         ...response.product,
                         price: lastPrice.price ?? 0,
-                        price_discount: lastPrice.price_discount ?? 0,
+                        price_discount: lastPrice.price_discount ?? null,
                         featured_image: response.product.images.find((image: ImageType) => image.is_featured)?.id || '', // Öne çıkan görselin ID'si
                         images: response.product.images.map((image: ImageType) => ({
                             id: image.id || '',
@@ -755,9 +755,9 @@ const ProductAdd = () => {
                         <input type="number" placeholder="Ürün İndirimli Fiyat" className="form-input"
                                name="price_discount"
                                id="price_discount"
-                               min="0" // Negatif değerleri engellemek için
-                               step="0.01" // Ondalık basamaklara izin vermek için
-                               value={formData.price_discount || 0}
+                               min="0"
+                               step="0.01"
+                               value={formData.price_discount == null ? 0 : formData.price_discount}
                                onChange={handleInputChange}
                         />
                         {errors.price_discount &&
