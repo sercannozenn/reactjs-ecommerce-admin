@@ -671,7 +671,7 @@ const ProductAdd = () => {
                             {formData.sizes.map((s, idx) => (
                                 <div
                                     key={idx}
-                                    className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4 w-full"
+                                    className={`grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4 w-full${s.stock <= s.stock_alert ? ' bg-red-50 border border-red-300 rounded-lg p-2' : ''}`}
                                 >
                                     {/* Beden */}
                                     <div className="flex flex-col">
@@ -685,7 +685,14 @@ const ProductAdd = () => {
 
                                     {/* Stok */}
                                     <div className="flex flex-col">
-                                        <label className="block text-sm font-medium mb-1">Stok</label>
+                                        <label className="block text-sm font-medium mb-1">
+                                            Stok
+                                            {s.stock <= s.stock_alert && (
+                                                <span className="ml-2 text-xs font-semibold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">
+                                                    ⚠ Kritik Stok
+                                                </span>
+                                            )}
+                                        </label>
                                         <Input
                                             className="w-full"
                                             type="number"

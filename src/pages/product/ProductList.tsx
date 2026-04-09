@@ -228,13 +228,34 @@ const ProductList = () => {
                 text: `Ürün durumu ${currentIsActiveText} olarak değiştirildi.`,
                 confirmButtonText: 'Tamam'
             });
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Hata!',
-                text: 'Ürün durumu değiştirilemedi. Lütfen tekrar deneyin.',
-                confirmButtonText: 'Tamam'
-            });
+        } catch (error: any) {
+            const errorData = error?.response?.data?.errors;
+
+            if (errorData?.error_code === 'requires_price_update') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Ürün Aktifleştirilemiyor',
+                    html: `
+                        <p style="margin-bottom:12px">${errorData.message}</p>
+                        <p style="color:#6b7280;font-size:0.9em">Ürünü düzenleyerek geçerli bir fiyat girin, ardından tekrar aktifleştirebilirsiniz.</p>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Ürünü Düzenle',
+                    cancelButtonText: 'Vazgeç',
+                    confirmButtonColor: '#f59e0b',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        navigateToRoute('ProductEdit', { id });
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Hata!',
+                    text: 'Ürün durumu değiştirilemedi. Lütfen tekrar deneyin.',
+                    confirmButtonText: 'Tamam'
+                });
+            }
         }
     };
     const getFiltersData = async () => {
@@ -613,7 +634,7 @@ const ProductList = () => {
                                 sortable: true,
                                 hidden: hideCols.includes('price'),
                                 render: (record: Product) => (
-                                    <span>{record.latest_price.price}</span>
+                                    <span>{record.latest_price?.price ?? '-'}</span>
                                 )
                             },
                             {
@@ -622,7 +643,7 @@ const ProductList = () => {
                                 sortable: true,
                                 hidden: hideCols.includes('price_discount'),
                                 render: (record: Product) => (
-                                    <span>{record.latest_price.price_discount}</span>
+                                    <span>{record.latest_price?.price_discount ?? '-'}</span>
                                 )
                             },
                             {
