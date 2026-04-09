@@ -22,6 +22,7 @@ import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuMore from '../Icon/Menu/IconMenuMore';
 import { clearToken } from '../../store/slices/auth/authSlice';
 import { useRouteNavigator } from '../../utils/RouteHelper';
+import api from '../../api/api';
 
 const Header = () => {
     const navigateToRoute = useRouteNavigator();
@@ -116,7 +117,12 @@ const Header = () => {
         setNotifications(notifications.filter((user) => user.id !== value));
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try {
+            await api.post('/admin/logout');
+        } catch (_) {
+            // Token geçersiz olsa bile local state temizlenir
+        }
         dispatch(clearToken());
         navigateToRoute('Login');
     }
