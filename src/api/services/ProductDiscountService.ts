@@ -109,10 +109,10 @@ export const ProductDiscountService = {
     },
     delete: async (id: number) => {
         try {
-            const response = await api.delete(`admin/product/${id}`);
+            const response = await api.delete(`admin/product-discount/${id}`);
             return response.data;
         } catch (error) {
-            console.error('ProductService delete Error:', error);
+            console.error('ProductDiscountService delete Error:', error);
             throw error;
         }
     },

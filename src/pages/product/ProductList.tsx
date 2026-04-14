@@ -8,9 +8,14 @@ import { setPageTitle } from '../../store/themeConfigSlice';
 import { ProductService } from '../../api/services/ProductService';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 import { Box, Collapse, Tooltip } from '@mantine/core';
+import DOMPurify from 'dompurify';
 import Select, { ActionMeta, MultiValue } from 'react-select';
 
 import makeAnimated from 'react-select/animated';
+
+const escapeHtml = (str: string) =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 
 import IconCaretDown from '../../components/Icon/IconCaretDown';
 import IconXCircle from '../../components/Icon/IconXCircle';
@@ -120,9 +125,9 @@ const ProductList = () => {
         <tr>
           <td>${h.price.toFixed(2)} ₺</td>
           <td>${h.price_discount.toFixed(2)} ₺</td>
-          <td>${h.discount_name}</td>
-          <td>${h.updated_by}</td>
-          <td>${h.reason}</td>
+          <td>${escapeHtml(h.discount_name ?? '')}</td>
+          <td>${escapeHtml(h.updated_by ?? '')}</td>
+          <td>${escapeHtml(h.reason ?? '')}</td>
           <td>${new Date(h.from).toLocaleString('tr-TR')}</td>
           <td>${h.until ? new Date(h.until).toLocaleString('tr-TR') : '-'}</td>
         </tr>
@@ -236,7 +241,7 @@ const ProductList = () => {
                     icon: 'warning',
                     title: 'Ürün Aktifleştirilemiyor',
                     html: `
-                        <p style="margin-bottom:12px">${errorData.message}</p>
+                        <p style="margin-bottom:12px">${escapeHtml(errorData.message ?? '')}</p>
                         <p style="color:#6b7280;font-size:0.9em">Ürünü düzenleyerek geçerli bir fiyat girin, ardından tekrar aktifleştirebilirsiniz.</p>
                     `,
                     showCancelButton: true,
@@ -567,9 +572,9 @@ const ProductList = () => {
                                 hidden: hideCols.includes('short_description'),
                                 render: (record: Product) => (
                                     <Tooltip
-                                        label={<Box dangerouslySetInnerHTML={{ __html: record.short_description }} />}>
+                                        label={<Box dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(record.short_description) }} />}>
                                         <div
-                                            dangerouslySetInnerHTML={{ __html: record.short_description.substring(0, 30) }} />
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(record.short_description.substring(0, 30)) }} />
                                     </Tooltip>
                                 )
                             },
@@ -580,9 +585,9 @@ const ProductList = () => {
                                 hidden: hideCols.includes('long_description'),
                                 render: (record: Product) => (
                                     <Tooltip
-                                        label={<Box dangerouslySetInnerHTML={{ __html: record.long_description }} />}>
+                                        label={<Box dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(record.long_description) }} />}>
                                         <div
-                                            dangerouslySetInnerHTML={{ __html: record.long_description.substring(0, 30) }} />
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(record.long_description.substring(0, 30)) }} />
                                     </Tooltip>
                                 )
                             },

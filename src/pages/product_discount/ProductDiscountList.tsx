@@ -19,6 +19,10 @@ import IconRefresh from '../../components/Icon/IconRefresh';
 import { ProductDiscountListType } from '../../types/discount';
 import IconEye from '../../components/Icon/IconEye';
 
+const escapeHtml = (str: string) =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
 
 const customNoOptionsMessage = () => {
     return (
@@ -138,7 +142,7 @@ const ProductDiscountList = () => {
             `).join('');
 
                 return `
-                <h4>${p.name}</h4>
+                <h4>${escapeHtml(p.name)}</h4>
                 <table style="width:100%; border:1px solid #ddd; border-collapse:collapse; margin-bottom:16px;">
                     <thead>
                         <tr>

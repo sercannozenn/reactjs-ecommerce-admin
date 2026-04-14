@@ -3,6 +3,10 @@ import Select, { ActionMeta, MultiValue, SingleValue } from 'react-select';
 import makeAnimated from 'react-select/animated';
 import { SlugHelper } from '../../helpers/helpers';
 import Swal from 'sweetalert2';
+
+const escapeHtml = (str: string) =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 import { useParams } from 'react-router-dom';
 import { setPageTitle } from '../../store/themeConfigSlice';
 import { useDispatch } from 'react-redux';
@@ -266,12 +270,12 @@ const ProductAdd = () => {
         onDropRejected: (rejectedFiles) => {
             const errors = rejectedFiles.map(({ file, errors }) => {
                 if (errors[0]?.code === 'file-too-large') {
-                    return `${file.name}: Dosya boyutu 2MB'dan büyük olamaz`;
+                    return `${escapeHtml(file.name)}: Dosya boyutu 2MB'dan büyük olamaz`;
                 }
                 if (errors[0]?.code === 'file-invalid-type') {
-                    return `${file.name}: Sadece resim dosyaları kabul edilmektedir`;
+                    return `${escapeHtml(file.name)}: Sadece resim dosyaları kabul edilmektedir`;
                 }
-                return `${file.name}: Dosya kabul edilemedi`;
+                return `${escapeHtml(file.name)}: Dosya kabul edilemedi`;
             });
 
             Swal.fire({
@@ -426,13 +430,13 @@ const ProductAdd = () => {
 
             const errorMessages = Object.entries(validationErrors)
                 .map(([field, messages]) => `${messages[0]}`)
-                .join('<br>');
+                .join('\n');
 
             // Önce SweetAlert'i göster
             await Swal.fire({
                 icon: 'error',
                 title: 'Lütfen aşağıdaki hataları düzeltiniz:',
-                html: errorMessages,
+                text: errorMessages,
                 confirmButtonText: 'Tamam'
             });
 

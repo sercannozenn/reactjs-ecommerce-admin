@@ -124,8 +124,8 @@ const SliderAdd = () => {
 
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
-            const errorMessages = Object.values(validationErrors).map((msg) => msg[0]).join('<br>');
-            await Swal.fire({ icon: 'error', title: 'Lütfen eksikleri düzeltin', html: errorMessages });
+            const errorMessages = Object.values(validationErrors).map((msg) => msg[0]).join('\n');
+            await Swal.fire({ icon: 'error', title: 'Lütfen eksikleri düzeltin', text: errorMessages });
             return;
         }
 
