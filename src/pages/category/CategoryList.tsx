@@ -1,7 +1,7 @@
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { IRootState } from '../../store';
 import Swal from 'sweetalert2';
 import Dropdown from '../../components/Dropdown';
@@ -10,9 +10,16 @@ import IconCaretDown from '../../components/Icon/IconCaretDown';
 import IconXCircle from '../../components/Icon/IconXCircle';
 import IconEdit from '../../components/Icon/IconEdit';
 import { CategoryService } from '../../api/services/CategoryService';
+import { TagService } from '../../api/services/TagService';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 import IconRefresh from '../../components/Icon/IconRefresh';
-import { Tooltip } from '@mantine/core';
+import IconSettings from '../../components/Icon/IconSettings';
+import { Collapse, Tooltip } from '@mantine/core';
+import Select from 'react-select';
+import makeAnimated from 'react-select/animated';
+import Flatpickr from 'react-flatpickr';
+import 'flatpickr/dist/flatpickr.css';
+import { Turkish } from 'flatpickr/dist/l10n/tr.js';
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
@@ -28,13 +35,47 @@ type Category = {
 const CategoryList = () => {
     const dispatch = useDispatch();
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
+    const [searchParams] = useSearchParams();
+    const presetTagId = searchParams.get('preset_tag_id');
+    const presetTagName = searchParams.get('preset_tag_name');
+    const presetTag = presetTagId ? { value: Number(presetTagId), label: presetTagName || '' } : undefined;
+
     const [data, setData] = useState<Category[]>([]);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [search, setSearch] = useState('');
     const [rowsPerPage, setRowsPerPage] = useState(PAGE_SIZES[1]);
     const [refreshLoad, setRefreshLoad] = useState(false);
+
+    const [filterTags, setFilterTags] = useState<any[]>(presetTag ? [presetTag] : []);
+    const [tagsOptions, setTagsOptions] = useState<any[]>([]);
+    const [isFilterOpen, setIsFilterOpen] = useState(!!presetTag);
+    const [filterParentCategory, setFilterParentCategory] = useState<any>(null);
+    const [filterStatus, setFilterStatus] = useState<any>(null);
+    const [parentCategoryOptions, setParentCategoryOptions] = useState<any[]>([]);
+    const [filterName, setFilterName] = useState('');
+    const [filterSlug, setFilterSlug] = useState('');
+    const [filterDescription, setFilterDescription] = useState('');
+    const [filterStartDate, setFilterStartDate] = useState('');
+    const [filterEndDate, setFilterEndDate] = useState('');
+
+    const statusOptions = [
+        { value: 1, label: 'Aktif' },
+        { value: 0, label: 'Pasif' },
+    ];
+
+    const hasActiveFilters = filterName || filterSlug || filterDescription || filterTags.length > 0 || filterParentCategory || filterStatus !== null || filterStartDate || filterEndDate;
+
+    const clearFilters = () => {
+        setFilterName('');
+        setFilterSlug('');
+        setFilterDescription('');
+        setFilterTags([]);
+        setFilterParentCategory(null);
+        setFilterStatus(null);
+        setFilterStartDate('');
+        setFilterEndDate('');
+    };
 
     const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
         columnAccessor: 'id',
@@ -230,10 +271,46 @@ const CategoryList = () => {
         dispatch(setPageTitle('Kategori Listesi'));
     });
     useEffect(() => {
+        const loadFilterOptions = async () => {
+            try {
+                const [tagResponse, categoryResponse] = await Promise.all([
+                    TagService.fetchTags(1, 1000, '', { columnAccessor: 'name', direction: 'asc' }),
+                    CategoryService.create()
+                ]);
+                setTagsOptions(
+                    tagResponse.data.data.map((tag: any) => ({
+                        value: tag.id,
+                        label: tag.name
+                    }))
+                );
+                setParentCategoryOptions(
+                    (categoryResponse.data.categories || []).map((cat: any) => ({
+                        value: cat.id,
+                        label: cat.name
+                    }))
+                );
+            } catch (error) {
+                console.error('Filtre seçenekleri yüklenemedi:', error);
+            }
+        };
+        loadFilterOptions();
+    }, []);
+    useEffect(() => {
         const loadCategories = async () => {
             setLoading(true);
             try {
-                const response = await CategoryService.list(page, rowsPerPage, search, sortStatus);
+                const filters: any = {};
+                const tagIds = filterTags.map((t: any) => t.value);
+                if (tagIds.length > 0) filters.tags = tagIds;
+                if (filterParentCategory) filters.parent_category_id = filterParentCategory.value;
+                if (filterStatus !== null) filters.is_active = filterStatus?.value;
+                if (filterName) filters.name = filterName;
+                if (filterSlug) filters.slug = filterSlug;
+                if (filterDescription) filters.description = filterDescription;
+                if (filterStartDate) filters.start_date = filterStartDate;
+                if (filterEndDate) filters.end_date = filterEndDate;
+
+                const response = await CategoryService.list(page, rowsPerPage, '', sortStatus, filters);
                 setData(response.data.data);
                 setTotal(response.data.total);
             } catch (error) {
@@ -243,64 +320,178 @@ const CategoryList = () => {
             }
         };
         loadCategories();
-    }, [page, rowsPerPage, search, sortStatus, refreshLoad]);
+    }, [page, rowsPerPage, sortStatus, refreshLoad, filterTags, filterParentCategory, filterStatus, filterName, filterSlug, filterDescription, filterStartDate, filterEndDate]);
 
     return (
         <div>
             <div className="panel mt-6">
                 <div className="flex md:items-center md:flex-row flex-col mb-5 gap-5">
                     <h5 className="font-semibold text-lg dark:text-white-light">Kategori Listesi</h5>
-                    <div className="flex items-center gap-5 ltr:ml-auto rtl:mr-auto">
-                        <div className="flex md:items-center md:flex-row flex-col gap-5">
-                            <div className="dropdown">
-                                <Dropdown
-                                    placement={`${isRtl ? 'bottom-end' : 'bottom-start'}`}
-                                    btnClassName="!flex items-center border font-semibold border-white-light dark:border-[#253b5c] rounded-md px-4 py-2 text-sm dark:bg-[#1b2e4b] dark:text-white-dark"
-                                    button={
-                                        <>
-                                            <span className="ltr:mr-1 rtl:ml-1">Sütunlar</span>
-                                            <IconCaretDown className="w-5 h-5" />
-                                        </>
-                                    }
-                                >
-                                    <ul className="!min-w-[140px]">
-                                        {cols.map((col, i) => {
-                                            return (
-                                                <li
-                                                    key={i}
-                                                    className="flex flex-col"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                    }}
-                                                >
-                                                    <div className="flex items-center px-4 py-1">
-                                                        <label className="cursor-pointer mb-0">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={!hideCols.includes(col.accessor)}
-                                                                className="form-checkbox"
-                                                                defaultValue={col.accessor}
-                                                                onChange={(event: any) => {
-                                                                    setHideCols(event.target.value);
-                                                                    showHideColumns(col.accessor, event.target.checked);
-                                                                }}
-                                                            />
-                                                            <span className="ltr:ml-2 rtl:mr-2">{col.title}</span>
-                                                        </label>
-                                                    </div>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </Dropdown>
-                            </div>
+                    <div className="flex items-center gap-3 ltr:ml-auto rtl:mr-auto">
+                        <div className="dropdown">
+                            <Dropdown
+                                placement={`${isRtl ? 'bottom-end' : 'bottom-start'}`}
+                                btnClassName="!flex items-center border font-semibold border-white-light dark:border-[#253b5c] rounded-md px-4 py-2 text-sm dark:bg-[#1b2e4b] dark:text-white-dark"
+                                button={
+                                    <>
+                                        <span className="ltr:mr-1 rtl:ml-1">Sütunlar</span>
+                                        <IconCaretDown className="w-5 h-5" />
+                                    </>
+                                }
+                            >
+                                <ul className="!min-w-[140px]">
+                                    {cols.map((col, i) => (
+                                        <li key={i} className="flex flex-col" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex items-center px-4 py-1">
+                                                <label className="cursor-pointer mb-0">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!hideCols.includes(col.accessor)}
+                                                        className="form-checkbox"
+                                                        defaultValue={col.accessor}
+                                                        onChange={(event: any) => {
+                                                            setHideCols(event.target.value);
+                                                            showHideColumns(col.accessor, event.target.checked);
+                                                        }}
+                                                    />
+                                                    <span className="ltr:ml-2 rtl:mr-2">{col.title}</span>
+                                                </label>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </Dropdown>
                         </div>
-                        <div className="text-right">
-                            <input type="text" className="form-input" placeholder="Arama Yap..." value={search}
-                                   onChange={(e) => setSearch(e.target.value)} />
-                        </div>
+                        <button
+                            type="button"
+                            className={`btn ${isFilterOpen ? 'btn-primary' : 'btn-outline-primary'} gap-2`}
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        >
+                            <IconSettings />
+                            Filtreler
+                            {hasActiveFilters && <span className="badge bg-white text-primary rounded-full ml-1">{[filterName, filterSlug, filterDescription, filterTags.length > 0, filterParentCategory, filterStatus !== null, filterStartDate, filterEndDate].filter(Boolean).length}</span>}
+                        </button>
                     </div>
                 </div>
+                <Collapse in={isFilterOpen}>
+                    <div className="border border-[#e0e6ed] dark:border-[#253b5c] rounded-md px-4 py-3 mb-4 bg-[#f9fafb] dark:bg-[#0e1726] max-w-4xl ml-auto">
+                        <div className="flex items-center justify-between mb-3">
+                            <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Filtreler</span>
+                            {hasActiveFilters && (
+                                <button type="button" className="text-[11px] text-danger hover:underline flex items-center gap-1" onClick={clearFilters}>
+                                    <IconXCircle className="w-3 h-3" />
+                                    Temizle
+                                </button>
+                            )}
+                        </div>
+                        {/* Satır 1: Text inputlar */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                            <div>
+                                <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-0.5">Kategori Adı</label>
+                                <input type="text" className="form-input py-1 text-xs" placeholder="Ara..." value={filterName} onChange={(e) => setFilterName(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-0.5">Slug Adı</label>
+                                <input type="text" className="form-input py-1 text-xs" placeholder="Ara..." value={filterSlug} onChange={(e) => setFilterSlug(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-0.5">Kısa Açıklama</label>
+                                <input type="text" className="form-input py-1 text-xs" placeholder="Ara..." value={filterDescription} onChange={(e) => setFilterDescription(e.target.value)} />
+                            </div>
+                        </div>
+                        {/* Satır 2: Select'ler */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                            <div>
+                                <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-0.5">Üst Kategori</label>
+                                <Select
+                                    value={filterParentCategory}
+                                    isClearable
+                                    components={makeAnimated()}
+                                    options={parentCategoryOptions}
+                                    placeholder="Seçiniz..."
+                                    classNamePrefix="select"
+                                    name="parent_category"
+                                    onChange={(selectedOption: any) => setFilterParentCategory(selectedOption)}
+                                    menuPortalTarget={document.body}
+                                    styles={{
+                                        menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+                                        control: (base: any) => ({ ...base, minHeight: '30px', fontSize: '12px' }),
+                                        valueContainer: (base: any) => ({ ...base, padding: '0 6px' }),
+                                        indicatorsContainer: (base: any) => ({ ...base, height: '30px' }),
+                                        dropdownIndicator: (base: any) => ({ ...base, padding: '4px' }),
+                                        clearIndicator: (base: any) => ({ ...base, padding: '4px' }),
+                                    }}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-0.5">Etiketler</label>
+                                <Select
+                                    value={filterTags}
+                                    isMulti
+                                    components={makeAnimated()}
+                                    options={tagsOptions}
+                                    placeholder="Seçiniz..."
+                                    classNamePrefix="select"
+                                    name="tags"
+                                    onChange={(selectedOptions: any) => setFilterTags(selectedOptions || [])}
+                                    menuPortalTarget={document.body}
+                                    styles={{
+                                        menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+                                        control: (base: any) => ({ ...base, minHeight: '30px', fontSize: '12px' }),
+                                        valueContainer: (base: any) => ({ ...base, padding: '0 6px' }),
+                                        indicatorsContainer: (base: any) => ({ ...base, height: '30px' }),
+                                        dropdownIndicator: (base: any) => ({ ...base, padding: '4px' }),
+                                        clearIndicator: (base: any) => ({ ...base, padding: '4px' }),
+                                    }}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-0.5">Durum</label>
+                                <Select
+                                    value={filterStatus}
+                                    isClearable
+                                    options={statusOptions}
+                                    placeholder="Seçiniz..."
+                                    classNamePrefix="select"
+                                    name="status"
+                                    onChange={(selectedOption: any) => setFilterStatus(selectedOption)}
+                                    menuPortalTarget={document.body}
+                                    styles={{
+                                        menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+                                        control: (base: any) => ({ ...base, minHeight: '30px', fontSize: '12px' }),
+                                        valueContainer: (base: any) => ({ ...base, padding: '0 6px' }),
+                                        indicatorsContainer: (base: any) => ({ ...base, height: '30px' }),
+                                        dropdownIndicator: (base: any) => ({ ...base, padding: '4px' }),
+                                        clearIndicator: (base: any) => ({ ...base, padding: '4px' }),
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        {/* Satır 3: Tarih aralığı */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                                <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-0.5">Oluşturma Tarihi (Başlangıç)</label>
+                                <Flatpickr
+                                    placeholder="Başlangıç tarihi seçin..."
+                                    options={{ dateFormat: 'd.m.Y', altInput: true, altFormat: 'd.m.Y', locale: Turkish }}
+                                    value={filterStartDate ? new Date(filterStartDate) : undefined}
+                                    className="form-input py-1 text-xs"
+                                    onChange={(dates) => setFilterStartDate(dates[0] ? `${dates[0].getFullYear()}-${String(dates[0].getMonth() + 1).padStart(2, '0')}-${String(dates[0].getDate()).padStart(2, '0')}` : '')}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-0.5">Oluşturma Tarihi (Bitiş)</label>
+                                <Flatpickr
+                                    placeholder="Bitiş tarihi seçin..."
+                                    options={{ dateFormat: 'd.m.Y', altInput: true, altFormat: 'd.m.Y', locale: Turkish }}
+                                    value={filterEndDate ? new Date(filterEndDate) : undefined}
+                                    className="form-input py-1 text-xs"
+                                    onChange={(dates) => setFilterEndDate(dates[0] ? `${dates[0].getFullYear()}-${String(dates[0].getMonth() + 1).padStart(2, '0')}-${String(dates[0].getDate()).padStart(2, '0')}` : '')}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </Collapse>
                 <div className="datatables">
                     <DataTable
                         className="whitespace-nowrap table-hover"

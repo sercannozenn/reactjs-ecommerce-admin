@@ -46,52 +46,118 @@ const TagList = () => {
         { accessor: 'slug', title: 'Etiket Slug Adı' }
     ];
 
-    const handleDelete = (id: number, name: string) => {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Etiketi Sil',
-            text: name + ' adlı  etiketi silmek istediğinize emin misiniz?',
-            showCancelButton: true,
-            confirmButtonText: 'Evet',
-            cancelButtonText: 'Hayır',
-            padding: '2em',
-            customClass: {
-                popup: 'sweet-alerts'
-            }
-        }).then(async (result) => {
-            if (result.value) {
-                try {
-                    const response = await TagService.deleteTag(id);
-                    setRefreshLoad(prev => !prev);
+    const executeDelete = async (id: number, name: string, force = false) => {
+        try {
+            await TagService.deleteTag(id, force ? { force: true } : undefined);
+            setRefreshLoad(prev => !prev);
+            Swal.fire({
+                title: 'Silindi!',
+                text: `"${name}" adlı etiket silindi.`,
+                icon: 'success',
+                confirmButtonText: 'Tamam',
+                customClass: { popup: 'sweet-alerts' }
+            });
+        } catch (error) {
+            Swal.fire({
+                title: 'Hata!',
+                text: `"${name}" adlı etiket silinemedi.`,
+                icon: 'error',
+                confirmButtonText: 'Tamam',
+                customClass: { popup: 'sweet-alerts' }
+            });
+        }
+    };
 
-                    Swal.fire({
-                        title: 'Silindi!',
-                        text: name + ' adlı etiket silindi.',
-                        icon: 'success',
-                        confirmButtonText: 'Tamam',
-                        customClass: { popup: 'sweet-alerts' }
-                    });
-                }
-                catch (error){
-                    Swal.fire({
-                        title: 'Hata!',
-                        text: name + ' adlı etiket silinemedi. Hata Alındı.',
-                        icon: 'error',
-                        confirmButtonText: 'Tamam',
-                        customClass: { popup: 'sweet-alerts' }
-                    });
-                }
+    const handleDelete = async (id: number, name: string) => {
+        try {
+            const info = await TagService.deleteInfo(id);
 
-            }else{
-                Swal.fire({
-                    title: 'Bilgi!',
-                    text: 'Herhangi bir işlem yapılmadı.',
-                    icon: 'info',
-                    confirmButtonText: 'Tamam',
+            if (info.total_products === 0 && info.total_categories === 0) {
+                const result = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Etiketi Sil',
+                    text: `"${name}" etiketini silmek istediğinize emin misiniz?`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Evet, Sil',
+                    cancelButtonText: 'İptal',
+                    padding: '2em',
                     customClass: { popup: 'sweet-alerts' }
                 });
+                if (result.isConfirmed) {
+                    await executeDelete(id, name);
+                }
+                return;
             }
-        });
+
+            const iconProduct = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`;
+            const iconCategory = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+            const externalIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+
+            const cardStyle = `border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-top:12px;background:#f8fafc;`;
+            const headerStyle = `display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#1e293b;`;
+            const badgeBase = `display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;`;
+            const viewBtnStyle = `background:#eef2ff;color:#4361ee;border:none;border-radius:8px;padding:10px;font-weight:600;font-size:13px;cursor:pointer;margin-top:12px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;`;
+
+            const productUrl = `/urunler?preset_tag_id=${id}&preset_tag_name=${encodeURIComponent(name)}`;
+            const categoryUrl = `/kategoriler?preset_tag_id=${id}&preset_tag_name=${encodeURIComponent(name)}`;
+
+            const productListHtml = info.total_products > 0
+                ? `<div style="${cardStyle}">
+                    <div style="${headerStyle}">${iconProduct} Ürünler <span style="${badgeBase}background:#4361ee;">${info.total_products}</span></div>
+                    <button id="swal-view-products-btn" style="${viewBtnStyle}">Ürünleri Görüntüle ${externalIcon}</button>
+                   </div>`
+                : '';
+
+            const categoryListHtml = info.total_categories > 0
+                ? `<div style="${cardStyle}">
+                    <div style="${headerStyle}">${iconCategory} Kategoriler <span style="${badgeBase}background:#e7515a;">${info.total_categories}</span></div>
+                    <button id="swal-view-categories-btn" style="${viewBtnStyle}">Kategorileri Görüntüle ${externalIcon}</button>
+                   </div>`
+                : '';
+
+            const result = await Swal.fire({
+                icon: 'warning',
+                title: 'Etikette İlişkiler Var',
+                html: `
+                    <p style="color:#64748b;font-size:14px;margin-bottom:4px;"><strong>"${name}"</strong> etiketi silinirse aşağıdaki ilişkiler koparılacak:</p>
+                    ${productListHtml}
+                    ${categoryListHtml}
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Yine de Sil',
+                cancelButtonText: 'İptal',
+                padding: '2em',
+                width: 520,
+                customClass: {
+                    popup: 'sweet-alerts',
+                    actions: '!flex-col !gap-2 !w-full !px-4',
+                    confirmButton: '!w-full !m-0',
+                    cancelButton: '!w-full !m-0',
+                },
+                didOpen: () => {
+                    const productBtn = document.getElementById('swal-view-products-btn');
+                    if (productBtn) {
+                        productBtn.addEventListener('click', () => window.open(productUrl, '_blank'));
+                    }
+                    const categoryBtn = document.getElementById('swal-view-categories-btn');
+                    if (categoryBtn) {
+                        categoryBtn.addEventListener('click', () => window.open(categoryUrl, '_blank'));
+                    }
+                },
+            });
+
+            if (result.isConfirmed) {
+                await executeDelete(id, name, true);
+            }
+        } catch (error) {
+            Swal.fire({
+                title: 'Hata!',
+                text: 'Etiket bilgisi alınamadı.',
+                icon: 'error',
+                confirmButtonText: 'Tamam',
+                customClass: { popup: 'sweet-alerts' }
+            });
+        }
     };
     const navigateToRoute = useRouteNavigator();
 

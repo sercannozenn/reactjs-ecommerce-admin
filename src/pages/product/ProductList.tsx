@@ -70,6 +70,9 @@ const ProductList = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const location = useLocation();
     const presetCategory = (location.state as any)?.preset_category as SelectOptionsType | undefined;
+    const presetTagId = searchParams.get('preset_tag_id');
+    const presetTagName = searchParams.get('preset_tag_name');
+    const presetTag = presetTagId ? { value: Number(presetTagId), label: presetTagName || '' } : undefined;
 
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
     const [data, setData] = useState<Product[]>([]);
@@ -85,7 +88,7 @@ const ProductList = () => {
         search: '',
         brands: [],
         categories: presetCategory ? [presetCategory] : [],
-        tags: [],
+        tags: presetTag ? [presetTag] : [],
         min_price: '',
         max_price: '',
         min_price_discount: '',
@@ -97,7 +100,7 @@ const ProductList = () => {
 
 
     const [hideCols, setHideCols] = useState<any>([]);
-    const [isFilterOpen, setIsFilterOpen] = useState(!!presetCategory);
+    const [isFilterOpen, setIsFilterOpen] = useState(!!presetCategory || !!presetTag);
     const cols = [
         { accessor: 'id', title: 'ID' },
         { accessor: 'name', title: 'Ürün Adı' },

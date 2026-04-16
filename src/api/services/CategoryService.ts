@@ -24,7 +24,7 @@ export const CategoryService = {
             throw error;
         }
     },
-    list: async (page = 1, limit = 10, search = '', sortStatus = { columnAccessor: 'id', direction: 'asc' }) => {
+    list: async (page = 1, limit = 10, search = '', sortStatus = { columnAccessor: 'id', direction: 'asc' }, filters: { tags?: number[]; parent_category_id?: number | null; is_active?: number | null; name?: string; slug?: string; description?: string; start_date?: string; end_date?: string } = {}) => {
         try {
             const response = await api.get(`admin/category`, {
                 params: {
@@ -33,6 +33,7 @@ export const CategoryService = {
                     search,
                     sort_by: sortStatus.columnAccessor,
                     sort_order: sortStatus.direction,
+                    ...filters,
                 },
             });
             return response.data;

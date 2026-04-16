@@ -48,9 +48,18 @@ export const TagService = {
             throw error;
         }
     },
-    deleteTag: async (id: number) => {
+    deleteInfo: async (id: number) => {
         try {
-            const response = await api.delete(`admin/tag/${id}`);
+            const response = await api.get(`admin/tag/${id}/delete-info`);
+            return response.data.data;
+        } catch (error) {
+            console.error('TagService deleteInfo Error:', error);
+            throw error;
+        }
+    },
+    deleteTag: async (id: number, params?: { force?: boolean }) => {
+        try {
+            const response = await api.delete(`admin/tag/${id}`, { params });
             return response.data;
         } catch (error) {
             console.error('TagService deleteTag Error:', error);
