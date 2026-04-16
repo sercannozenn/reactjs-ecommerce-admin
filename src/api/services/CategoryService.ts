@@ -68,9 +68,18 @@ export const CategoryService = {
             throw error;
         }
     },
-    delete: async (id: number) => {
+    deleteInfo: async (id: number) => {
         try {
-            const response = await api.delete(`admin/category/${id}`);
+            const response = await api.get(`admin/category/${id}/delete-info`);
+            return response.data.data;
+        } catch (error) {
+            console.error('CategoryService deleteInfo Error:', error);
+            throw error;
+        }
+    },
+    delete: async (id: number, params?: { target_category_id?: number; force?: boolean }) => {
+        try {
+            const response = await api.delete(`admin/category/${id}`, { data: params });
             return response.data;
         } catch (error) {
             console.error('CategoryService delete Error:', error);

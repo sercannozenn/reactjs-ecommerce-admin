@@ -16,6 +16,23 @@ type Tag = {
 type Category = {
     id: number;
     name: string;
+    parent_category_id: number | null;
+};
+
+type FlatOption = { id: number; name: string; depth: number };
+
+const buildTreeOptions = (categories: Category[]): FlatOption[] => {
+    const result: FlatOption[] = [];
+    const addChildren = (parentId: number | null, depth: number) => {
+        categories
+            .filter((c) => c.parent_category_id === parentId)
+            .forEach((c) => {
+                result.push({ id: c.id, name: c.name, depth });
+                addChildren(c.id, depth + 1);
+            });
+    };
+    addChildren(null, 0);
+    return result;
 };
 const customNoOptionsMessage = () => {
     return (
@@ -196,10 +213,10 @@ const CategoryAdd = () => {
                                 name="parent_category_id"
                                 onChange={handleInputChange}
                                 value={formData.parent_category_id}>
-                            <option>Üst Kategori</option>
-                            {categories.map((category: Category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
+                            <option value="">Üst Kategori</option>
+                            {buildTreeOptions(categories).map((opt) => (
+                                <option key={opt.id} value={opt.id}>
+                                    {'—'.repeat(opt.depth) + (opt.depth > 0 ? ' ' : '')}{opt.name}
                                 </option>
                             ))}
                         </select>

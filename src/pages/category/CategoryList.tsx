@@ -1,6 +1,7 @@
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { IRootState } from '../../store';
 import Swal from 'sweetalert2';
 import Dropdown from '../../components/Dropdown';
@@ -61,53 +62,140 @@ const CategoryList = () => {
 
     ];
 
-    const handleDelete = (id: number, name: string) => {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Kategori Sil',
-            text: name + ' adlı  kategoriyi silmek istediğinize emin misiniz? Kategori silindiğinde tüm alt kategoriler ve bunlara bağlı ürünler de silinecektir.',
-            showCancelButton: true,
-            confirmButtonText: 'Evet',
-            cancelButtonText: 'Hayır',
-            padding: '2em',
-            customClass: {
-                popup: 'sweet-alerts'
-            }
-        }).then(async (result) => {
-            if (result.value) {
-                try {
-                    const response = await CategoryService.delete(id);
-                    setRefreshLoad(prev => !prev);
+    const executeDelete = async (id: number, name: string, params?: { target_category_id?: number; force?: boolean }) => {
+        try {
+            await CategoryService.delete(id, params);
+            setRefreshLoad(prev => !prev);
+            Swal.fire({
+                title: 'Silindi!',
+                text: name + ' adlı kategori silindi.',
+                icon: 'success',
+                confirmButtonText: 'Tamam',
+                customClass: { popup: 'sweet-alerts' }
+            });
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.errors?.error ?? name + ' adlı kategori silinemedi.';
+            Swal.fire({
+                title: 'Silinemedi!',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'Tamam',
+                customClass: { popup: 'sweet-alerts' }
+            });
+        }
+    };
 
-                    Swal.fire({
-                        title: 'Silindi!',
-                        text: name + ' adlı kategori silindi.',
-                        icon: 'success',
-                        confirmButtonText: 'Tamam',
-                        customClass: { popup: 'sweet-alerts' }
-                    });
-                } catch (error) {
-                    Swal.fire({
-                        title: 'Hata!',
-                        text: name + ' adlı kategori silinemedi. Hata Alındı.',
-                        icon: 'error',
-                        confirmButtonText: 'Tamam',
-                        customClass: { popup: 'sweet-alerts' }
-                    });
-                }
+    const handleDelete = async (id: number, name: string) => {
+        try {
+            const info = await CategoryService.deleteInfo(id);
 
-            } else {
+            if (info.has_children) {
                 Swal.fire({
-                    title: 'Bilgi!',
-                    text: 'Herhangi bir işlem yapılmadı.',
-                    icon: 'info',
+                    icon: 'error',
+                    title: 'Silinemez!',
+                    text: `"${name}" kategorisinin alt kategorileri bulunuyor. Önce alt kategorileri taşıyın.`,
                     confirmButtonText: 'Tamam',
                     customClass: { popup: 'sweet-alerts' }
                 });
+                return;
             }
-        });
+
+            if (info.total_products === 0) {
+                const result = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Kategori Sil',
+                    text: `"${name}" kategorisini silmek istediğinize emin misiniz?`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Evet, Sil',
+                    cancelButtonText: 'İptal',
+                    padding: '2em',
+                    customClass: { popup: 'sweet-alerts' }
+                });
+                if (result.isConfirmed) {
+                    await executeDelete(id, name);
+                }
+                return;
+            }
+
+            let exclusiveHtml = '';
+            if (info.exclusive_products > 0) {
+                exclusiveHtml = `<p class="text-danger text-sm mt-2"><strong>${info.exclusive_products} ürün</strong> sadece bu kategoride yer alıyor ve taşınmazsa kategorisiz kalacak.</p>`;
+            }
+
+            const result = await Swal.fire({
+                icon: 'warning',
+                title: 'Kategoride Ürün Var',
+                html: `
+                    <p class="mb-3"><strong>"${name}"</strong> kategorisinde <strong>${info.total_products} ürün</strong> bulunuyor.</p>
+                    ${exclusiveHtml}
+                    <button id="swal-view-products-btn" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 16px;background:#4361ee;color:#fff;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${info.total_products} ürünü görüntüle</button>
+                `,
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Kategorilerini Değiştir ve Sil',
+                denyButtonText: 'Yine de Sil',
+                cancelButtonText: 'İptal',
+                padding: '2em',
+                customClass: {
+                    popup: 'sweet-alerts',
+                    actions: '!flex-col !gap-2 !w-full !px-4',
+                    confirmButton: '!w-full !m-0',
+                    denyButton: '!w-full !m-0',
+                    cancelButton: '!w-full !m-0',
+                },
+                didOpen: () => {
+                    document.getElementById('swal-view-products-btn')?.addEventListener('click', () => {
+                        Swal.close();
+                        navigate('/urunler', {
+                            state: { preset_category: { value: id, label: info.category_name || name } }
+                        });
+                    });
+                }
+            });
+
+            if (result.isConfirmed) {
+                const categories = await CategoryService.create();
+                const options = (categories.data.categories || [])
+                    .filter((c: any) => c.id !== id)
+                    .reduce((acc: Record<string, string>, c: any) => {
+                        acc[c.id] = c.name;
+                        return acc;
+                    }, {});
+
+                const { value: targetId } = await Swal.fire({
+                    title: 'Hedef Kategori Seçin',
+                    text: 'Ürünler bu kategoriye taşınacak:',
+                    input: 'select',
+                    inputOptions: options,
+                    inputPlaceholder: 'Kategori seçin...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Taşı ve Sil',
+                    cancelButtonText: 'İptal',
+                    padding: '2em',
+                    customClass: { popup: 'sweet-alerts' },
+                    inputValidator: (value) => {
+                        if (!value) return 'Lütfen bir kategori seçin.';
+                    }
+                });
+
+                if (targetId) {
+                    await executeDelete(id, name, { target_category_id: Number(targetId) });
+                }
+            } else if (result.isDenied) {
+                await executeDelete(id, name, { force: true });
+            }
+        } catch (error) {
+            Swal.fire({
+                title: 'Hata!',
+                text: 'Kategori bilgisi alınamadı.',
+                icon: 'error',
+                confirmButtonText: 'Tamam',
+                customClass: { popup: 'sweet-alerts' }
+            });
+        }
     };
     const navigateToRoute = useRouteNavigator();
+    const navigate = useNavigate();
 
     const handleEdit = (id: number) => {
         navigateToRoute('CategoryEdit', { id });
