@@ -20,7 +20,7 @@ import IconMenuDatatables from '../Icon/Menu/IconMenuDatatables';
 import IconMenuForms from '../Icon/Menu/IconMenuForms';
 import IconMenuPages from '../Icon/Menu/IconMenuPages';
 import IconMenuMore from '../Icon/Menu/IconMenuMore';
-import { clearToken } from '../../store/slices/auth/authSlice';
+import { logout } from '../../store/slices/auth/authSlice';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 import api from '../../api/api';
 
@@ -123,7 +123,7 @@ const Header = () => {
         } catch (_) {
             // Token geçersiz olsa bile local state temizlenir
         }
-        dispatch(clearToken());
+        dispatch(logout());
         navigateToRoute('Login');
     }
 

@@ -61,7 +61,7 @@ const SettingsAdd = () => {
         data.append('key', formData.key);
 
         if (formData.key === 'logo' || formData.key === 'favicon') {
-            if (file) data.append(formData.key, file);
+            if (file) data.append('value', file);
         } else {
             data.append('value', formData.value ?? '');
         }

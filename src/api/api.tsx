@@ -1,6 +1,28 @@
-import axios from 'axios';
-import { clearToken } from '../store/slices/auth/authSlice';
+import axios, { InternalAxiosRequestConfig } from 'axios';
+import { logout, setToken, setUser } from '../store/slices/auth/authSlice';
 import store from '../store';
+
+interface RetryableRequest extends InternalAxiosRequestConfig {
+    _retry?: boolean;
+}
+
+interface QueueEntry {
+    resolve: (token: string) => void;
+    reject: (error: unknown) => void;
+}
+
+// Eş zamanlı birden fazla istek 401 alırsa hepsini bekletip tek refresh ile çözülür.
+// refresh başarısız olursa tüm bekleyenler reddedilip logout tetiklenir.
+let isRefreshing = false;
+let failedQueue: QueueEntry[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+    failedQueue.forEach(({ resolve, reject }) => {
+        if (error) reject(error);
+        else resolve(token!);
+    });
+    failedQueue = [];
+};
 
 const api = axios.create({
     baseURL: 'http://kermes.test/api'
@@ -22,17 +44,46 @@ api.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 // Response Interceptor
-api.interceptors.response.use((response) => response, (error) =>
-    {
-        if (error.response && error.response.status === 401) {
-            store.dispatch(clearToken());
-            window.location.href = '/login';
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config as RetryableRequest;
+
+        const is401 = error.response?.status === 401;
+        const isRefreshEndpoint = originalRequest.url === '/admin/refresh';
+
+        if (is401 && !originalRequest._retry && !isRefreshEndpoint) {
+            if (isRefreshing) {
+                return new Promise<string>((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then((token) => {
+                    originalRequest.headers!.Authorization = `Bearer ${token}`;
+                    return api(originalRequest);
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const { data } = await api.post('/admin/refresh');
+                store.dispatch(setToken(data.token));
+                store.dispatch(setUser(data.user));
+                processQueue(null, data.token);
+                originalRequest.headers!.Authorization = `Bearer ${data.token}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                store.dispatch(logout());
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
 
         return Promise.reject(error);
