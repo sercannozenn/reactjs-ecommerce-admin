@@ -355,7 +355,9 @@ const ProductDiscountAdd = () => {
                         {errors.discount_type && <p className="text-red-500 text-xs mt-1">{errors.discount_type[0]}</p>}
                     </div>
                     <div className="mb-5">
-                        <input type="number" name="discount_amount" className="form-input" value={formData.discount_amount} onChange={handleInputChange} placeholder="İndirim Miktarı" />
+                        <input type="number" name="discount_amount" className="form-input" value={formData.discount_amount} onChange={handleInputChange} placeholder="İndirim Miktarı"
+                               min={0}
+                               max={formData.discount_type === 'percentage' ? 99 : undefined} />
                         {errors.discount_amount && <p className="text-red-500 text-xs mt-1">{errors.discount_amount[0]}</p>}
                     </div>
 

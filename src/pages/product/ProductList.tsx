@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useDispatch, useSelector } from 'react-redux';
 import { IRootState } from '../../store';
@@ -66,6 +67,9 @@ const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
 const ProductList = () => {
     const dispatch = useDispatch();
     const navigateToRoute = useRouteNavigator();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const location = useLocation();
+    const presetCategory = (location.state as any)?.preset_category as SelectOptionsType | undefined;
 
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
     const [data, setData] = useState<Product[]>([]);
@@ -78,9 +82,9 @@ const ProductList = () => {
 
 
     const [filterData, setFilterData] = useState<Record<string, any>>({
-        search: '', // Arama için alan ekleniyor
+        search: '',
         brands: [],
-        categories: [],
+        categories: presetCategory ? [presetCategory] : [],
         tags: [],
         min_price: '',
         max_price: '',
@@ -93,7 +97,7 @@ const ProductList = () => {
 
 
     const [hideCols, setHideCols] = useState<any>([]);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(!!presetCategory);
     const cols = [
         { accessor: 'id', title: 'ID' },
         { accessor: 'name', title: 'Ürün Adı' },
@@ -274,12 +278,11 @@ const ProductList = () => {
                 }))
             );
 
-            setCategories(
-                response.data.categories.map((category: any) => ({
-                    value: category.id,
-                    label: category.name
-                }))
-            );
+            const categoryOptions = response.data.categories.map((category: any) => ({
+                value: category.id,
+                label: category.name
+            }));
+            setCategories(categoryOptions);
 
             setTagsOptions(
                 response.data.tags.map((tag: any) => ({
@@ -287,6 +290,7 @@ const ProductList = () => {
                     label: tag.name
                 }))
             );
+
         } catch (error) {
             console.error('Filtre verileri çekilirken hata oluştu:', error);
         }
