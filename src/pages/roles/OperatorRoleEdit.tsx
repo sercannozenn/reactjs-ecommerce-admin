@@ -64,7 +64,7 @@ const OperatorRoleEdit = () => {
             <ul className="flex space-x-2 rtl:space-x-reverse mb-5">
                 <li>
                     <NavLink to="/roller/operatorler" className="text-primary hover:underline">
-                        ← Operatör Rolleri
+                        ← Sistem Kullanıcı Rolleri
                     </NavLink>
                 </li>
                 <li className="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 text-gray-600 dark:text-gray-400">

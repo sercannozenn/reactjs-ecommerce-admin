@@ -26,7 +26,7 @@ const OperatorRoleList = () => {
     const [creating, setCreating] = useState(false);
 
     useEffect(() => {
-        dispatch(setPageTitle('Operatör Rolleri'));
+        dispatch(setPageTitle('Sistem Kullanıcı Rolleri'));
         const load = async () => {
             setLoading(true);
             try {
@@ -92,7 +92,7 @@ const OperatorRoleList = () => {
     return (
         <div>
             <ul className="flex space-x-2 rtl:space-x-reverse mb-5">
-                <li className="font-semibold text-primary">Operatör Rolleri</li>
+                <li className="font-semibold text-primary">Sistem Kullanıcı Rolleri</li>
             </ul>
 
             <div className="panel mt-4">
@@ -176,10 +176,10 @@ const OperatorRoleList = () => {
                                 className="form-input"
                                 placeholder="ornek_rol"
                                 value={newRoleName}
-                                onChange={e => setNewRoleName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                onChange={e => setNewRoleName(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter') handleCreate(); }}
                             />
-                            <p className="text-xs text-gray-400 mt-1">Yalnızca küçük harf, rakam ve alt çizgi kullanın.</p>
+                            <p className="text-xs text-gray-400 mt-1">Harf, rakam, boşluk ve tire kullanabilirsiniz.</p>
                         </div>
                         <div className="flex justify-end gap-2">
                             <button

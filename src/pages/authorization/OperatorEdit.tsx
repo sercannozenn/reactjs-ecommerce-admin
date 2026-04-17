@@ -26,7 +26,7 @@ const OperatorEdit = () => {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        dispatch(setPageTitle('Operatör Düzenle'));
+        dispatch(setPageTitle('Kullanıcı Düzenle'));
         const load = async () => {
             try {
                 setLoading(true);
@@ -104,11 +104,11 @@ const OperatorEdit = () => {
             <ul className="flex space-x-2 rtl:space-x-reverse mb-5">
                 <li>
                     <NavLink to="/yetkilendirme/operatorler" className="text-primary hover:underline">
-                        ← Operatörler
+                        ← Sistem Kullanıcıları
                     </NavLink>
                 </li>
                 <li className="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 text-gray-600 dark:text-gray-400">
-                    Operatör Düzenle
+                    Kullanıcı Düzenle
                 </li>
             </ul>
 

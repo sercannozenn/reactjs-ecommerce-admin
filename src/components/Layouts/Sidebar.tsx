@@ -71,10 +71,14 @@ const Sidebar = () => {
                     </div>
                     <PerfectScrollbar className="h-[calc(100vh-80px)] relative">
                         <ul className="relative font-semibold space-y-0.5 p-4 py-0">
-                            <h2 className="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
-                                <IconMinus className="w-4 h-5 flex-none hidden" />
-                                <span>Dashboard</span>
-                            </h2>
+
+                            {/* ── Katalog ── */}
+                            {(can('categories.view-any') || can('brands.view-any') || can('tags.view-any')) && (
+                                <h2 className="py-3 px-7 flex items-center font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
+                                    <IconMinus className="w-4 h-5 flex-none hidden" />
+                                    <span>Katalog</span>
+                                </h2>
+                            )}
 
                             {can('categories.view-any') && (
                             <li className="menu nav-item">
@@ -173,6 +177,14 @@ const Sidebar = () => {
                             </li>
                             )}
 
+                            {/* ── Ürün & Satış ── */}
+                            {(can('products.view-any') || can('discounts.view-any')) && (
+                                <h2 className="py-3 px-7 flex items-center font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1 mt-2">
+                                    <IconMinus className="w-4 h-5 flex-none hidden" />
+                                    <span>Ürün & Satış</span>
+                                </h2>
+                            )}
+
                             {can('products.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
@@ -237,6 +249,14 @@ const Sidebar = () => {
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
+
+                            {/* ── İçerik ── */}
+                            {(can('sliders.view-any') || can('announcements.view-any')) && (
+                                <h2 className="py-3 px-7 flex items-center font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1 mt-2">
+                                    <IconMinus className="w-4 h-5 flex-none hidden" />
+                                    <span>İçerik</span>
+                                </h2>
                             )}
 
                             {can('sliders.view-any') && (
@@ -305,6 +325,14 @@ const Sidebar = () => {
                             </li>
                             )}
 
+                            {/* ── Yapılandırma ── */}
+                            {can('settings.view-any') && (
+                                <h2 className="py-3 px-7 flex items-center font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1 mt-2">
+                                    <IconMinus className="w-4 h-5 flex-none hidden" />
+                                    <span>Yapılandırma</span>
+                                </h2>
+                            )}
+
                             {can('settings.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
@@ -340,7 +368,7 @@ const Sidebar = () => {
 
                             {can('roles.view-any') && (
                             <>
-                                <h2 className="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1 mt-2">
+                                <h2 className="py-3 px-7 flex items-center font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1 mt-2">
                                     <IconMinus className="w-4 h-5 flex-none hidden" />
                                     <span>Yetki Yönetimi</span>
                                 </h2>
@@ -362,7 +390,7 @@ const Sidebar = () => {
                                     </button>
                                     <AnimateHeight duration={300} height={currentMenu === 'yetkilendirme' ? 'auto' : 0}>
                                         <ul className="sub-menu text-gray-500">
-                                            <li><NavLink to="/yetkilendirme/operatorler">Operatörler</NavLink></li>
+                                            <li><NavLink to="/yetkilendirme/operatorler">Sistem Kullanıcıları</NavLink></li>
                                             <li><NavLink to="/yetkilendirme/uyeler" className="opacity-60">Üyeler <span className="badge badge-outline-secondary text-xs py-0 px-1 ml-1">Yakında</span></NavLink></li>
                                         </ul>
                                     </AnimateHeight>
@@ -385,7 +413,7 @@ const Sidebar = () => {
                                     </button>
                                     <AnimateHeight duration={300} height={currentMenu === 'roller' ? 'auto' : 0}>
                                         <ul className="sub-menu text-gray-500">
-                                            <li><NavLink to="/roller/operatorler">Operatör Rolleri</NavLink></li>
+                                            <li><NavLink to="/roller/operatorler">Sistem Kullanıcı Rolleri</NavLink></li>
                                             <li><NavLink to="/roller/uyeler" className="opacity-60">Üye Rolleri <span className="badge badge-outline-secondary text-xs py-0 px-1 ml-1">Yakında</span></NavLink></li>
                                         </ul>
                                     </AnimateHeight>

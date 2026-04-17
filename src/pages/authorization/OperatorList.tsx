@@ -29,7 +29,7 @@ const OperatorList = () => {
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
     useEffect(() => {
-        dispatch(setPageTitle('Operatörler'));
+        dispatch(setPageTitle('Sistem Kullanıcıları'));
         RoleService.roles().then(setRoles).catch(() => {});
     }, []);
 
@@ -119,7 +119,7 @@ const OperatorList = () => {
     return (
         <div>
             <ul className="flex space-x-2 rtl:space-x-reverse mb-5">
-                <li className="font-semibold text-primary">Operatörler</li>
+                <li className="font-semibold text-primary">Sistem Kullanıcıları</li>
             </ul>
 
             <div className="panel mt-4">
