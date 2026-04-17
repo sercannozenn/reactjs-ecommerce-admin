@@ -1,5 +1,5 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
-import { logout, setToken, setUser } from '../store/slices/auth/authSlice';
+import { logout, loginSuccess } from '../store/slices/auth/authSlice';
 import store from '../store';
 
 interface RetryableRequest extends InternalAxiosRequestConfig {
@@ -71,8 +71,10 @@ api.interceptors.response.use(
 
             try {
                 const { data } = await api.post('/admin/refresh');
-                store.dispatch(setToken(data.token));
-                store.dispatch(setUser(data.user));
+                store.dispatch(loginSuccess({
+                    token: data.token,
+                    user: data.user,
+                }));
                 processQueue(null, data.token);
                 originalRequest.headers!.Authorization = `Bearer ${data.token}`;
                 return api(originalRequest);

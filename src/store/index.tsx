@@ -1,13 +1,22 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import themeConfigSlice from './themeConfigSlice';
-import authSlice from './slices/auth/authSlice';
+import authSlice, { initialState as authInitialState } from './slices/auth/authSlice';
 import storage from 'redux-persist/lib/storage'; // localStorage kullanımı için
-import { persistReducer, persistStore } from 'redux-persist';
+import { createMigrate, persistReducer, persistStore, PersistedState } from 'redux-persist';
+
+const migrations = {
+    2: (state: PersistedState) => ({
+        ...(state ?? {}),
+        auth: authInitialState,
+    }) as PersistedState,
+};
 
 const persistConfig = {
     key: 'root', // Verilerin saklanacağı key
     storage, // localStorage kullan
     whitelist: ['auth'], // Sadece 'auth' state'ini sakla
+    version: 2,
+    migrate: createMigrate(migrations, { debug: false }),
 };
 
 const rootReducer = combineReducers({
