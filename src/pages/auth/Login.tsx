@@ -5,7 +5,7 @@ import { setPageTitle } from '../../store/themeConfigSlice';
 import IconMail from '../../components/Icon/IconMail';
 import IconLockDots from '../../components/Icon/IconLockDots';
 import api from '../../api/api';
-import { setToken, setUser } from '../../store/slices/auth/authSlice';
+import { loginSuccess } from '../../store/slices/auth/authSlice';
 import { AxiosError } from 'axios';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 
@@ -21,21 +21,23 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [errorType, setErrorType] = useState<'error' | 'warning'>('error');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError('');
+        setErrorType('error');
         setIsLoading(true);
 
         try {
             const response = await api.post('/login', { email, password });
 
             if (response.data?.token) {
-                const token = response.data.token;
-
-                dispatch(setToken(token));
-                dispatch(setUser(response.data.user));
+                dispatch(loginSuccess({
+                    token: response.data.token,
+                    user: response.data.user,
+                }));
                 navigateToRoute('Index');
             } else {
                 setError('Beklenmeyen bir hata oluştu.');
@@ -44,9 +46,23 @@ const Login = () => {
 
         } catch (err) {
             const error = err as AxiosError;
-            if (error.response?.data) {
-                setError((error.response.data as { message?: string }).message || 'Giriş başarısız.');
+            const status = error.response?.status;
+            const serverMessage = (error.response?.data as { message?: string } | undefined)?.message;
+
+            if (status === 403) {
+                setErrorType('warning');
+                setError(serverMessage || 'Hesabınız askıya alınmıştır. Lütfen yönetici ile iletişime geçin.');
+            } else if (status === 401) {
+                setErrorType('error');
+                setError('E-posta veya şifre hatalı.');
+            } else if (status === 422) {
+                setErrorType('error');
+                setError(serverMessage || 'Lütfen girdiğiniz bilgileri kontrol edin.');
+            } else if (error.response?.data) {
+                setErrorType('error');
+                setError(serverMessage || 'Giriş başarısız.');
             } else {
+                setErrorType('error');
                 setError('Beklenmeyen bir hata oluştu.');
             }
         } finally {
@@ -109,7 +125,13 @@ const Login = () => {
                                     </div>
                                 </div>
                                 {error && (
-                                    <div className="flex items-center p-3.5 rounded text-white bg-amber-500 dark:bg-amber-500">
+                                    <div
+                                        className={`flex items-center p-3.5 rounded text-white ${
+                                            errorType === 'warning'
+                                                ? 'bg-amber-500 dark:bg-amber-500'
+                                                : 'bg-red-500 dark:bg-red-500'
+                                        }`}
+                                    >
                                         <span className="ltr:pr-2 rtl:pl-2">
                                             <strong className="ltr:mr-1 rtl:ml-1">{ error }</strong>
                                         </span>

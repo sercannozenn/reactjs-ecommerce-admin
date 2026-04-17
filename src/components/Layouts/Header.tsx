@@ -23,6 +23,7 @@ import IconMenuMore from '../Icon/Menu/IconMenuMore';
 import { logout } from '../../store/slices/auth/authSlice';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 import api from '../../api/api';
+import IconUser from '../Icon/IconUser';
 
 const Header = () => {
     const navigateToRoute = useRouteNavigator();
@@ -227,6 +228,12 @@ const Header = () => {
                                         </div>
                                     </li>
 
+                                    <li>
+                                        <Link to="/profil" className="dark:hover:text-white !py-3">
+                                            <IconUser className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
+                                            Profil
+                                        </Link>
+                                    </li>
                                     <li className="border-t border-white-light dark:border-white-light/10">
                                         <a onClick={handleLogout} className="text-danger !py-3" href="#">
                                             <IconLogout className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 rotate-90 shrink-0" />
