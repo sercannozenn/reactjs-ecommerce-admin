@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { Navigate } from 'react-router-dom';
 import CategoryList from '../pages/category/CategoryList';
 import TagAdd from '../pages/tag/TagAdd';
 import TagList from '../pages/tag/TagList';
@@ -19,6 +20,12 @@ import Profile from '../pages/profile/Profile';
 import RoleManagement from '../pages/role/RoleManagement';
 import Forbidden from '../pages/Forbidden';
 import PermissionRoute from './PermissionRoute';
+import OperatorList from '../pages/authorization/OperatorList';
+import OperatorEdit from '../pages/authorization/OperatorEdit';
+import MemberListStub from '../pages/authorization/MemberListStub';
+import OperatorRoleList from '../pages/roles/OperatorRoleList';
+import OperatorRoleEdit from '../pages/roles/OperatorRoleEdit';
+import MemberRoleListStub from '../pages/roles/MemberRoleListStub';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const CategoryAdd = lazy(() => import('../pages/category/CategoryAdd'));
@@ -215,8 +222,49 @@ const routes = [
     },
     {
         path: '/roller',
-        name: 'RoleManagement',
-        element: <PermissionRoute permission="roles.view-any"><RoleManagement /></PermissionRoute>,
+        element: <Navigate to="/roller/operatorler" replace />,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/yetkilendirme/operatorler',
+        name: 'OperatorList',
+        element: <PermissionRoute permission="roles.view-any"><OperatorList /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/yetkilendirme/operatorler/:id',
+        name: 'OperatorEdit',
+        element: <PermissionRoute permission="roles.assign-permission-to-user"><OperatorEdit /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/yetkilendirme/uyeler',
+        name: 'MemberListStub',
+        element: <PermissionRoute permission="roles.view-any"><MemberListStub /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/roller/operatorler',
+        name: 'OperatorRoleList',
+        element: <PermissionRoute permission="roles.view-any"><OperatorRoleList /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/roller/operatorler/:id',
+        name: 'OperatorRoleEdit',
+        element: <PermissionRoute permission="roles.update"><OperatorRoleEdit /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/roller/uyeler',
+        name: 'MemberRoleListStub',
+        element: <PermissionRoute permission="roles.view-any"><MemberRoleListStub /></PermissionRoute>,
         layout: 'default',
         protected: true
     },

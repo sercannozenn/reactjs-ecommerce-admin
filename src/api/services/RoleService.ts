@@ -16,6 +16,12 @@ export type RoleItem = {
     permissions: PermissionItem[];
 };
 
+export type RoleDetail = {
+    id: number;
+    name: string;
+    permissions: string[];
+};
+
 export type UserItem = {
     id: number;
     name: string;
@@ -23,6 +29,18 @@ export type UserItem = {
     is_active: boolean;
     roles: string[];
     direct_permissions: string[];
+};
+
+export type UserListParams = {
+    search?: string;
+    role?: string;
+    status?: string;
+    page?: number;
+};
+
+export type PaginatedUsers = {
+    data: UserItem[];
+    meta: { total: number; per_page: number; current_page: number; last_page: number };
 };
 
 export const RoleService = {
@@ -44,6 +62,30 @@ export const RoleService = {
     users: async (): Promise<UserItem[]> => {
         const response = await api.get('admin/users');
         return response.data.data;
+    },
+
+    fetchUsers: async (params: UserListParams = {}): Promise<PaginatedUsers> => {
+        const response = await api.get('admin/users', { params });
+        return response.data.data;
+    },
+
+    getUser: async (id: number): Promise<UserItem> => {
+        const response = await api.get(`admin/users/${id}`);
+        return response.data.data;
+    },
+
+    getRole: async (id: number): Promise<RoleDetail> => {
+        const response = await api.get(`admin/roles/${id}`);
+        return response.data.data;
+    },
+
+    createRole: async (name: string, permissions: string[] = []): Promise<{ id: number; name: string }> => {
+        const response = await api.post('admin/roles', { name, permissions });
+        return response.data.data;
+    },
+
+    deleteRole: async (id: number): Promise<void> => {
+        await api.delete(`admin/roles/${id}`);
     },
 
     assignRole: async (userId: number, role: string) => {
