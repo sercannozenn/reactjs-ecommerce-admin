@@ -7,10 +7,12 @@ import IconRefresh from '../../components/Icon/IconRefresh';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 import { Tooltip } from '@mantine/core';
 import { SliderService } from '../../api/services/SliderService';
+import { useCan } from '../../utils/permissions';
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 const SliderList = () => {
+    const can = useCan();
     const navigateToRoute = useRouteNavigator();
     const [data, setData] = useState<any[]>([]);
     const [page, setPage] = useState(1);
@@ -89,6 +91,7 @@ const SliderList = () => {
             accessor: 'is_active',
             title: 'Durum',
             render: (item: any) => (
+                can('sliders.change-status') ? (
                 <Tooltip label="Tıklayarak durumu değiştirebilirsiniz">
                     <button
                         onClick={() => handleChangeStatus(item)}
@@ -99,6 +102,11 @@ const SliderList = () => {
                         {item.is_active ? 'Aktif' : 'Pasif'}
                     </button>
                 </Tooltip>
+                ) : (
+                    <span className={`text-sm px-2 py-1 rounded font-semibold ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {item.is_active ? 'Aktif' : 'Pasif'}
+                    </span>
+                )
             )
         },
         {
@@ -106,16 +114,20 @@ const SliderList = () => {
             title: 'İşlem',
             render: (item: any) => (
                 <div className="flex items-center gap-2">
+                    {can('sliders.update') && (
                     <Tooltip label="Düzenle">
                         <button onClick={() => navigateToRoute('SliderEdit', { id: item.id })}>
                             <IconEdit />
                         </button>
                     </Tooltip>
+                    )}
+                    {can('sliders.delete') && (
                     <Tooltip label="Sil">
                         <button onClick={() => handleDelete(item)}>
                             <IconXCircle className="text-red-500" />
                         </button>
                     </Tooltip>
+                    )}
                 </div>
             )
         }
@@ -133,7 +145,7 @@ const SliderList = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
-                    <button onClick={() => navigateToRoute('SliderAdd')} className="btn btn-primary">Ekle</button>
+                    {can('sliders.create') && <button onClick={() => navigateToRoute('SliderAdd')} className="btn btn-primary">Ekle</button>}
                     <button onClick={fetchData} className="btn btn-secondary"><IconRefresh /></button>
                 </div>
             </div>

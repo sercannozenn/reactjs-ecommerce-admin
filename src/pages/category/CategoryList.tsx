@@ -20,6 +20,7 @@ import makeAnimated from 'react-select/animated';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 import { Turkish } from 'flatpickr/dist/l10n/tr.js';
+import { useCan } from '../../utils/permissions';
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
@@ -33,6 +34,7 @@ type Category = {
     formatted_created_at: string;
 };
 const CategoryList = () => {
+    const can = useCan();
     const dispatch = useDispatch();
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
     const [searchParams] = useSearchParams();
@@ -534,6 +536,7 @@ const CategoryList = () => {
                                 hidden: hideCols.includes('is_active'),
                                 render: (record: Category) => (
                                     <div>
+                                        {can('categories.change-status') ? (
                                         <Tooltip label="Tıklayarak Durumu değiştirebiliriniz">
                                             <button className="items-center" onClick={() => handleChangeStatus(record.id)}>
                                                 {record.is_active ? (
@@ -543,7 +546,9 @@ const CategoryList = () => {
                                                 )}
                                             </button>
                                         </Tooltip>
-
+                                        ) : (
+                                            record.is_active ? <IconRefresh className="text-green-500" /> : <IconRefresh className="text-red-500" />
+                                        )}
                                     </div>
                                 )
                             },
@@ -558,18 +563,22 @@ const CategoryList = () => {
                                 title: 'İşlemler',
                                 render: (record: Category) => (
                                     <div className="flex space-x-2">
+                                        {can('categories.update') && (
                                         <button
                                             onClick={() => handleEdit(record.id)}
                                             className="p-2"
                                         >
                                             <IconEdit />
                                         </button>
+                                        )}
+                                        {can('categories.delete') && (
                                         <button
                                             onClick={() => handleDelete(record.id, record.name)}
                                             className="p-2"
                                         >
                                             <IconXCircle />
                                         </button>
+                                        )}
                                     </div>
                                 )
                             }

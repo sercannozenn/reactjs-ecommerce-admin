@@ -15,6 +15,7 @@ import '../../assets/css/style.css';
 import { Collapse, Tooltip } from '@mantine/core';
 import Dropdown from '../../components/Dropdown';
 import IconCaretDown from '../../components/Icon/IconCaretDown';
+import { useCan } from '../../utils/permissions';
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 type AnnouncementRecord = {
@@ -26,6 +27,7 @@ type AnnouncementRecord = {
 };
 
 const AnnouncementList = () => {
+    const can = useCan();
     const dispatch = useDispatch();
     const navigateToRoute = useRouteNavigator();
 
@@ -151,6 +153,7 @@ const AnnouncementList = () => {
             hidden: hideCols.includes('is_active'),
             render: (record: AnnouncementRecord) => (
                 <div>
+                    {can('announcements.change-status') ? (
                     <Tooltip label="Tıklayarak durumu değiştirebilirsiniz">
                         <button className="items-center"
                                 onClick={() => handleStatusChange(record.id)}>
@@ -161,6 +164,9 @@ const AnnouncementList = () => {
                             )}
                         </button>
                     </Tooltip>
+                    ) : (
+                        record.is_active ? <IconRefresh className="text-green-500" /> : <IconRefresh className="text-red-500" />
+                    )}
                 </div>
             ),
         },
@@ -170,8 +176,8 @@ const AnnouncementList = () => {
             hidden: hideCols.includes('actions'),
             render: (record: AnnouncementRecord) => (
                 <div className="flex gap-2">
-                    <div className="cursor-pointer text-blue-600" onClick={() => handleEdit(record.id)}><IconEdit /></div>
-                    <div className="cursor-pointer text-red-600" onClick={() => handleDelete(record.id, record.title)}><IconXCircle /></div>
+                    {can('announcements.update') && <div className="cursor-pointer text-blue-600" onClick={() => handleEdit(record.id)}><IconEdit /></div>}
+                    {can('announcements.delete') && <div className="cursor-pointer text-red-600" onClick={() => handleDelete(record.id, record.title)}><IconXCircle /></div>}
                 </div>
             ),
         },

@@ -12,6 +12,7 @@ import { useRouteNavigator } from '../../utils/RouteHelper';
 import IconRefresh from '../../components/Icon/IconRefresh';
 import { Tooltip } from '@mantine/core';
 import { BrandService } from '../../api/services/BrandService';
+import { useCan } from '../../utils/permissions';
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
@@ -23,6 +24,7 @@ type Brand = {
     formatted_created_at: string;
 };
 const BrandList = () => {
+    const can = useCan();
     const dispatch = useDispatch();
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
     const [data, setData] = useState<Brand[]>([]);
@@ -239,6 +241,7 @@ const BrandList = () => {
                                 hidden: hideCols.includes('is_active'),
                                 render: (record: Brand) => (
                                     <div>
+                                        {can('brands.change-status') ? (
                                         <Tooltip label="Tıklayarak Durumu değiştirebiliriniz">
                                             <button className="items-center" onClick={() => handleChangeStatus(record.id)}>
                                                 {record.is_active ? (
@@ -248,6 +251,9 @@ const BrandList = () => {
                                                 )}
                                             </button>
                                         </Tooltip>
+                                        ) : (
+                                            record.is_active ? <IconRefresh className="text-green-500" /> : <IconRefresh className="text-red-500" />
+                                        )}
 
                                     </div>
                                 )
@@ -263,18 +269,22 @@ const BrandList = () => {
                                 title: 'İşlemler',
                                 render: (record: Brand) => (
                                     <div className="flex space-x-2">
+                                        {can('brands.update') && (
                                         <button
                                             onClick={() => handleEdit(record.id)}
                                             className="p-2"
                                         >
                                             <IconEdit />
                                         </button>
+                                        )}
+                                        {can('brands.delete') && (
                                         <button
                                             onClick={() => handleDelete(record.id, record.name)}
                                             className="p-2"
                                         >
                                             <IconXCircle />
                                         </button>
+                                        )}
                                     </div>
                                 )
                             }

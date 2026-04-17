@@ -10,12 +10,14 @@ import { useDispatch } from 'react-redux';
 import { Collapse } from '@mantine/core';
 import IconSettings from '../../components/Icon/IconSettings';
 import IconPlus from '../../components/Icon/IconPlus';
+import { useCan } from '../../utils/permissions';
 import Dropdown from '../../components/Dropdown';
 import IconCaretDown from '../../components/Icon/IconCaretDown';
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 const SettingsList = () => {
+    const can = useCan();
     const dispatch = useDispatch();
     const navigateToRoute = useRouteNavigator();
 
@@ -111,10 +113,8 @@ const SettingsList = () => {
             hidden: hideCols.includes('actions'),
             render: (record: SettingType) => (
                 <div className="flex gap-2">
-
-                    <div className="cursor-pointer text-blue-600" onClick={() => handleEdit(record.id!)}><IconEdit /></div>
-
-                    <div className="cursor-pointer text-red-600" onClick={() => handleDelete(record.id!, record.key)}><IconXCircle /></div>
+                    {can('settings.update') && <div className="cursor-pointer text-blue-600" onClick={() => handleEdit(record.id!)}><IconEdit /></div>}
+                    {can('settings.update') && <div className="cursor-pointer text-red-600" onClick={() => handleDelete(record.id!, record.key)}><IconXCircle /></div>}
                 </div>
             ),
         },

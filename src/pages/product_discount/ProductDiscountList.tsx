@@ -18,6 +18,7 @@ import IconCaretDown from '../../components/Icon/IconCaretDown';
 import IconRefresh from '../../components/Icon/IconRefresh';
 import { ProductDiscountListType } from '../../types/discount';
 import IconEye from '../../components/Icon/IconEye';
+import { useCan } from '../../utils/permissions';
 
 const escapeHtml = (str: string) =>
     str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -35,6 +36,7 @@ const customNoOptionsMessage = () => {
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 const ProductDiscountList = () => {
+    const can = useCan();
     const dispatch = useDispatch();
     const navigateToRoute = useRouteNavigator();
 
@@ -81,6 +83,7 @@ const ProductDiscountList = () => {
         { accessor: 'is_active', title: 'Durum', hidden: hideCols.includes('is_active'),
             render: (record: ProductDiscountListType) => (
                 <div>
+                    {can('discounts.change-status') ? (
                     <Tooltip label="Tıklayarak durumu değiştirebilirsiniz">
                         <button className="items-center" onClick={() => handleChangeStatus(record.id)}>
                             {
@@ -92,6 +95,9 @@ const ProductDiscountList = () => {
                             }
                         </button>
                     </Tooltip>
+                    ) : (
+                        record.is_active ? <IconRefresh className="text-green-500" /> : <IconRefresh className="text-red-500" />
+                    )}
                 </div>
             )
         },
@@ -104,9 +110,11 @@ const ProductDiscountList = () => {
         { accessor: 'actions', title: 'İşlemler', hidden: hideCols.includes('actions'),
             render: (record: ProductDiscountListType) => (
                 <div className="flex gap-2">
+                    {can('discounts.update') && (
                     <button onClick={() => navigateToRoute('ProductDiscountEdit', { id: record.id })} className="btn btn-sm btn-info">
                         <IconEdit />
                     </button>
+                    )}
                     <button
                         onClick={() => handleView(record.id)}
                         className="btn btn-sm btn-secondary"

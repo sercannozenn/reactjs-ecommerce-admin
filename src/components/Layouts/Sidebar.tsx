@@ -11,8 +11,10 @@ import IconCaretDown from '../Icon/IconCaretDown';
 import IconMinus from '../Icon/IconMinus';
 import IconMenuComponents from '../Icon/Menu/IconMenuComponents';
 import { route } from '../../utils/RouteHelper';
+import { useCan } from '../../utils/permissions';
 
 const Sidebar = () => {
+    const can = useCan();
 
     const [menuCount, setMenuCount] = useState(0);
     const [currentMenu, setCurrentMenu] = useState<string>('');
@@ -74,6 +76,7 @@ const Sidebar = () => {
                                 <span>Dashboard</span>
                             </h2>
 
+                            {can('categories.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
                                         className={`${currentMenu === 'category' ? 'active' : ''} nav-link group w-full`}
@@ -96,12 +99,16 @@ const Sidebar = () => {
                                         <li>
                                             <NavLink to={route('CategoryList')} >Kategori Listesi</NavLink>
                                         </li>
+                                        {can('categories.create') && (
                                         <li>
                                             <NavLink to={route('CategoryAdd')} >Kategori Ekleme</NavLink>
                                         </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
+                            {can('brands.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
                                         className={`${currentMenu === 'brand' ? 'active' : ''} nav-link group w-full`}
@@ -124,12 +131,16 @@ const Sidebar = () => {
                                         <li>
                                             <NavLink to={route('BrandList')} >Marka Listesi</NavLink>
                                         </li>
+                                        {can('brands.create') && (
                                         <li>
                                             <NavLink to={route('BrandAdd')} >Marka Ekleme</NavLink>
                                         </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
+                            {can('tags.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
                                         className={`${currentMenu === 'tag' ? 'active' : ''} nav-link group w-full`}
@@ -152,15 +163,17 @@ const Sidebar = () => {
                                         <li>
                                             <NavLink to={route('TagList')} >Etiket Listesi</NavLink>
                                         </li>
+                                        {can('tags.create') && (
                                         <li>
                                             <NavLink to={route('TagAdd')} >Etiket Ekleme</NavLink>
                                         </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
 
-
-
+                            {can('products.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
                                         className={`${currentMenu === 'product' ? 'active' : ''} nav-link group w-full`}
@@ -183,13 +196,17 @@ const Sidebar = () => {
                                         <li>
                                             <NavLink to={route('ProductList')} >Ürün Listesi</NavLink>
                                         </li>
+                                        {can('products.create') && (
                                         <li>
                                             <NavLink to={route('ProductAdd')} >Ürün Ekleme</NavLink>
                                         </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
 
+                            {can('discounts.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
                                         className={`${currentMenu === 'discount' ? 'active' : ''} nav-link group w-full`}
@@ -212,13 +229,17 @@ const Sidebar = () => {
                                         <li>
                                             <NavLink to={route('ProductDiscountList')} >İndirim Listesi</NavLink>
                                         </li>
+                                        {can('discounts.create') && (
                                         <li>
                                             <NavLink to={route('ProductDiscountAdd')} >İndirim Ekleme</NavLink>
                                         </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
 
+                            {can('sliders.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
                                         className={`${currentMenu === 'slider' ? 'active' : ''} nav-link group w-full`}
@@ -241,13 +262,17 @@ const Sidebar = () => {
                                         <li>
                                             <NavLink to={route('SliderList')} >Slider Listesi</NavLink>
                                         </li>
+                                        {can('sliders.create') && (
                                         <li>
                                             <NavLink to={route('SliderAdd')} >Slider Ekleme</NavLink>
                                         </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
 
+                            {can('announcements.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
                                         className={`${currentMenu === 'announcement' ? 'active' : ''} nav-link group w-full`}
@@ -270,13 +295,17 @@ const Sidebar = () => {
                                         <li>
                                             <NavLink to={route('AnnouncementList')} >Duyuru Etkinlik Listesi</NavLink>
                                         </li>
+                                        {can('announcements.create') && (
                                         <li>
                                             <NavLink to={route('AnnouncementAdd')} >Duyuru Etkinlik Ekleme</NavLink>
                                         </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
 
+                            {can('settings.view-any') && (
                             <li className="menu nav-item">
                                 <button type="button"
                                         className={`${currentMenu === 'settings' ? 'active' : ''} nav-link group w-full`}
@@ -299,12 +328,28 @@ const Sidebar = () => {
                                         <li>
                                             <NavLink to={route('SettingsList')} >Ayar Listesi</NavLink>
                                         </li>
+                                        {can('settings.update') && (
                                         <li>
                                             <NavLink to={route('SettingsAdd')} >Ayar Ekleme</NavLink>
                                         </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
                             </li>
+                            )}
+
+                            {can('roles.view-any') && (
+                            <li className="menu nav-item">
+                                <NavLink to="/roller" className="group">
+                                    <div className="flex items-center">
+                                        <IconMenuComponents className="group-hover:!text-primary shrink-0" />
+                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                            Rol & Yetki Yönetimi
+                                        </span>
+                                    </div>
+                                </NavLink>
+                            </li>
+                            )}
                         </ul>
                     </PerfectScrollbar>
                 </div>

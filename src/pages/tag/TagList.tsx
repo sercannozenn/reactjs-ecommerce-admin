@@ -10,11 +10,13 @@ import IconXCircle from '../../components/Icon/IconXCircle';
 import IconEdit from '../../components/Icon/IconEdit';
 import { TagService } from '../../api/services/TagService';
 import { useRouteNavigator } from '../../utils/RouteHelper';
+import { useCan } from '../../utils/permissions';
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 
 const TagList = () => {
+    const can = useCan();
     const dispatch = useDispatch();
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
     const [data, setData] = useState([]);
@@ -268,18 +270,22 @@ const TagList = () => {
                                 title: 'İşlemler',
                                 render: (record: { id: number, name: string }) => (
                                     <div className="flex space-x-2">
+                                        {can('tags.update') && (
                                         <button
                                             onClick={() => handleEdit(record.id)}
                                             className="p-2"
                                         >
                                             <IconEdit />
                                         </button>
+                                        )}
+                                        {can('tags.delete') && (
                                         <button
                                             onClick={() => handleDelete(record.id, record.name)}
                                             className="p-2"
                                         >
                                             <IconXCircle />
                                         </button>
+                                        )}
                                     </div>
                                 )
                             }

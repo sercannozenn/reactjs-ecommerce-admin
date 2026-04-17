@@ -29,6 +29,7 @@ import IconEye from '../../components/Icon/IconEye';
 import '../../assets/css/style.css';
 import IconCopy from '../../components/Icon/IconCopy';
 import IconShare from '../../components/Icon/IconShare';
+import { useCan } from '../../utils/permissions';
 
 const customNoOptionsMessage = () => {
     return (
@@ -65,6 +66,7 @@ type SelectOptionsType = {
 const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
 
 const ProductList = () => {
+    const can = useCan();
     const dispatch = useDispatch();
     const navigateToRoute = useRouteNavigator();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -677,6 +679,7 @@ const ProductList = () => {
                                 hidden: hideCols.includes('is_active'),
                                 render: (record: Product) => (
                                     <div>
+                                        {can('products.change-status') ? (
                                         <Tooltip label="Tıklayarak durumu değiştirebilirsiniz">
                                             <button className="items-center"
                                                     onClick={() => handleChangeStatus(record.id)}>
@@ -687,6 +690,9 @@ const ProductList = () => {
                                                 )}
                                             </button>
                                         </Tooltip>
+                                        ) : (
+                                            record.is_active ? <IconRefresh className="text-green-500" /> : <IconRefresh className="text-red-500" />
+                                        )}
                                     </div>
                                 )
                             },
@@ -702,19 +708,24 @@ const ProductList = () => {
                                 render: (record: Product) => (
                                     <div className="flex space-x-2">
                                         <div className="inline-flex rounded overflow-hidden border border-gray-300">
+                                            {can('products.update') && (
                                             <Tooltip label="Ürünü Düzenle">
                                                 <button onClick={() => handleEdit(record.id)} className="px-3 py-2 bg-yellow-400 hover:bg-yellow-500 text-white">
                                                     <IconEdit className="w-4 h-4" />
                                                 </button>
                                             </Tooltip>
+                                            )}
 
+                                            {can('products.delete') && (
                                             <Tooltip label="Ürünü Sil">
                                                 <button onClick={() => handleDelete(record.id, record.name)} className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white">
                                                     <IconXCircle className="w-4 h-4" />
                                                 </button>
                                             </Tooltip>
+                                            )}
                                         </div>
 
+                                        {can('products.view-price-history') && (
                                         <div className="inline-flex rounded overflow-hidden border border-gray-300">
                                             <Tooltip label="Fiyat Geçmişini Gör">
                                                 <button
@@ -734,6 +745,7 @@ const ProductList = () => {
                                                 </button>
                                             </Tooltip>
                                         </div>
+                                        )}
 
                                         <Tooltip label="Tıklayarak ürünün linkini kopyalayabilirsiniz.">
                                             <button
