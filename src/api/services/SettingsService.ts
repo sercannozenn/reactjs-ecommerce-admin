@@ -3,9 +3,22 @@ import api from '../api';
 export type SettingType = {
     id?: number;
     key: string;
+    label?: string;
+    description?: string | null;
     value: string | null;
+    value_url?: string | null;
+    type?: 'string' | 'text' | 'file' | 'boolean' | 'integer';
+    group?: string;
+    order?: number;
+    is_protected?: boolean;
     created_at?: string;
     formatted_created_at?: string;
+};
+
+export type SettingGroupType = {
+    group: string;
+    group_order: number;
+    settings: SettingType[];
 };
 
 export const SettingsService = {
@@ -18,6 +31,11 @@ export const SettingsService = {
     }) {
         const response = await api.get('/admin/settings', { params });
         return response.data.data; // Laravel 'success' response -> { data, debug? }
+    },
+
+    async listGroups(): Promise<SettingGroupType[]> {
+        const response = await api.get('/admin/settings/groups');
+        return response.data.data;
     },
 
     async fetchById(id: number): Promise<SettingType> {
@@ -35,6 +53,11 @@ export const SettingsService = {
         const payload = data instanceof FormData ? data : toFormData(data);
         const response = await api.post(`/admin/settings/${id}?_method=PUT`, payload);
         return response.data.data;
+    },
+
+    async reorderGroups(groups: { group: string; order: number }[]) {
+        const response = await api.put('/admin/settings/reorder-groups', { groups });
+        return response.data;
     },
 
     async delete(id: number) {

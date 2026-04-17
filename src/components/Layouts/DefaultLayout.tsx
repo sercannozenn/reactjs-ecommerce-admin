@@ -8,13 +8,42 @@ import Header from './Header';
 import Setting from './Setting';
 import Sidebar from './Sidebar';
 import Portals from '../../components/Portals';
+import { SettingsService } from '../../api/services/SettingsService';
+import { ProfileService } from '../../api/services/ProfileService';
+import { setUser } from '../../store/slices/auth/authSlice';
 
 const DefaultLayout = ({ children }: PropsWithChildren) => {
     const themeConfig = useSelector((state: IRootState) => state.themeConfig);
+    const token = useSelector((state: IRootState) => state.auth.token);
     const dispatch = useDispatch();
 
     const [showLoader, setShowLoader] = useState(true);
     const [showTopButton, setShowTopButton] = useState(false);
+
+    // Uygulama açılışında güncel permissions'ı API'den çek (rol değişikliklerini yansıt)
+    useEffect(() => {
+        if (!token) return;
+        ProfileService.fetch()
+            .then((profile) => {
+                dispatch(setUser(profile));
+            })
+            .catch(() => {});
+    }, [token]);
+
+    // A6: site_name ayarını çek ve document.title suffix'i güncelle
+    useEffect(() => {
+        SettingsService.list({ limit: 100 })
+            .then((data: any) => {
+                const siteNameSetting = Array.isArray(data)
+                    ? data.find((s: any) => s.key === 'site_name')
+                    : null;
+                const name: string = siteNameSetting?.value ?? '';
+                if (name) {
+                    document.title = `${document.title.split('|')[0].trim()} | ${name} — Yonetim Paneli`;
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     const goToTop = () => {
         document.body.scrollTop = 0;

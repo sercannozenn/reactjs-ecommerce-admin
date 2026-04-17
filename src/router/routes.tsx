@@ -13,6 +13,7 @@ import AnnouncementAdd from '../pages/announcement/AnnouncementAdd';
 import AnnouncementList from '../pages/announcement/AnnouncementList';
 import SettingsAdd from '../pages/settings/SettingsAdd';
 import SettingsList from '../pages/settings/SettingsList';
+import SettingsGroupOrder from '../pages/settings/SettingsGroupOrder';
 import ProductDiscountAdd from '../pages/product_discount/ProductDiscountAdd';
 import ProductDiscountList from '../pages/product_discount/ProductDiscountList';
 import ProductDiscountHistory from '../pages/product/ProductDiscountHistory';
@@ -182,6 +183,13 @@ const routes = [
         path: '/ayarlar',
         name: 'SettingsList',
         element: <PermissionRoute permission="settings.view-any"><SettingsList /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/ayarlar/grup-sirala',
+        name: 'SettingsGroupOrder',
+        element: <PermissionRoute permission="settings.update"><SettingsGroupOrder /></PermissionRoute>,
         layout: 'default',
         protected: true
     },
