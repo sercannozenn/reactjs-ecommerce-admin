@@ -241,7 +241,7 @@ const RoleManagement = () => {
                                     </div>
                                 )}
 
-                                <PermissionGroup groups={permissionGroups} selected={selectedPermissions} onChange={setSelectedPermissions} disabled={isSuperAdmin} />
+                                <PermissionGroup groups={permissionGroups.flatMap(g => g.modules)} selected={selectedPermissions} onChange={setSelectedPermissions} disabled={isSuperAdmin} />
                             </div>
                         </div>
                     )}
@@ -314,7 +314,7 @@ const RoleManagement = () => {
                             Burada atanan yetkiler, kullanıcının rolünden bağımsız olarak ek olarak verilir.
                         </p>
 
-                        <PermissionGroup groups={permissionGroups} selected={userPermissions} onChange={setUserPermissions} />
+                        <PermissionGroup groups={permissionGroups.flatMap(g => g.modules)} selected={userPermissions} onChange={setUserPermissions} inherited={permModalUser?.role_permissions ?? []} roleName={ROLE_LABELS[permModalUser?.roles[0] ?? ''] ?? permModalUser?.roles[0]} />
 
                         <div className="flex justify-end gap-2 mt-5">
                             <button className="btn btn-outline-danger" onClick={() => setPermModalUser(null)}>

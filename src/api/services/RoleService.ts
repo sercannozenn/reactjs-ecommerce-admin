@@ -5,9 +5,15 @@ export type PermissionItem = {
     description: string;
 };
 
-export type PermissionGroup = {
+export type PermissionModule = {
     module: string;
     permissions: PermissionItem[];
+};
+
+export type PermissionGroup = {
+    group: string;
+    group_label: string;
+    modules: PermissionModule[];
 };
 
 export type RoleItem = {
@@ -29,6 +35,7 @@ export type UserItem = {
     is_active: boolean;
     roles: string[];
     direct_permissions: string[];
+    role_permissions: string[];
 };
 
 export type UserListParams = {

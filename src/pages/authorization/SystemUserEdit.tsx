@@ -12,7 +12,7 @@ const ROLE_LABELS: Record<string, string> = {
     editor: 'Editör',
 };
 
-const OperatorEdit = () => {
+const SystemUserEdit = () => {
     const dispatch = useDispatch();
     const { id } = useParams<{ id: string }>();
     const userId = Number(id);
@@ -103,7 +103,7 @@ const OperatorEdit = () => {
             {/* Breadcrumb */}
             <ul className="flex space-x-2 rtl:space-x-reverse mb-5">
                 <li>
-                    <NavLink to="/yetkilendirme/operatorler" className="text-primary hover:underline">
+                    <NavLink to="/yetkilendirme/sistem-kullanicilari" className="text-primary hover:underline">
                         ← Sistem Kullanıcıları
                     </NavLink>
                 </li>
@@ -160,6 +160,8 @@ const OperatorEdit = () => {
                             groups={permissionGroups}
                             selected={directPermissions}
                             onChange={setDirectPermissions}
+                            inherited={user.role_permissions}
+                            roleName={ROLE_LABELS[user.roles[0]] ?? user.roles[0]}
                         />
                         <div className="flex justify-end mt-4">
                             <button
@@ -179,4 +181,4 @@ const OperatorEdit = () => {
     );
 };
 
-export default OperatorEdit;
+export default SystemUserEdit;

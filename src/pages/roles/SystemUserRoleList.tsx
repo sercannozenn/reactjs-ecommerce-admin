@@ -11,7 +11,7 @@ const ROLE_LABELS: Record<string, string> = {
     editor: 'Editör',
 };
 
-const OperatorRoleList = () => {
+const SystemUserRoleList = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -136,7 +136,7 @@ const OperatorRoleList = () => {
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
                                                     className="btn btn-sm btn-outline-info"
-                                                    onClick={() => navigate(`/roller/operatorler/${role.id}`)}
+                                                    onClick={() => navigate(`/roller/sistem-kullanicilari/${role.id}`)}
                                                 >
                                                     Düzenle
                                                 </button>
@@ -203,4 +203,4 @@ const OperatorRoleList = () => {
     );
 };
 
-export default OperatorRoleList;
+export default SystemUserRoleList;

@@ -6,7 +6,7 @@ import { RoleService, RoleDetail, PermissionGroup as PermissionGroupType } from 
 import PermissionSidecar from '../../components/permission/PermissionSidecar';
 import Swal from 'sweetalert2';
 
-const OperatorRoleEdit = () => {
+const SystemUserRoleEdit = () => {
     const dispatch = useDispatch();
     const { id } = useParams<{ id: string }>();
     const roleId = Number(id);
@@ -63,7 +63,7 @@ const OperatorRoleEdit = () => {
             {/* Breadcrumb */}
             <ul className="flex space-x-2 rtl:space-x-reverse mb-5">
                 <li>
-                    <NavLink to="/roller/operatorler" className="text-primary hover:underline">
+                    <NavLink to="/roller/sistem-kullanicilari" className="text-primary hover:underline">
                         ← Sistem Kullanıcı Rolleri
                     </NavLink>
                 </li>
@@ -130,4 +130,4 @@ const OperatorRoleEdit = () => {
     );
 };
 
-export default OperatorRoleEdit;
+export default SystemUserRoleEdit;

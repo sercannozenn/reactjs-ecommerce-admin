@@ -3,21 +3,15 @@ import type { PermissionGroup } from '../../api/services/RoleService';
 import AnimateHeight from 'react-animate-height';
 import IconCaretDown from '../Icon/IconCaretDown';
 
-// Frontend-only hiyerarşi haritası
-const HIERARCHY: Array<{ key: string; label: string; modules: string[] }> = [
-    { key: 'catalog',  label: 'Katalog Yönetimi',       modules: ['categories', 'brands', 'tags'] },
-    { key: 'product',  label: 'Ürün & Satış',           modules: ['products', 'discounts'] },
-    { key: 'content',  label: 'İçerik Yönetimi',        modules: ['sliders', 'announcements'] },
-    { key: 'site',     label: 'Site Yönetimi',          modules: ['settings'] },
-    { key: 'auth',     label: 'Kimlik & Yetkilendirme', modules: ['roles'] },
-];
-
 const MODULE_LABELS: Record<string, string> = {
     categories: 'Kategori Yönetimi',
     brands: 'Marka Yönetimi',
     tags: 'Etiket Yönetimi',
     products: 'Ürün İşlemleri',
     discounts: 'İndirim Yönetimi',
+    coupons: 'Kupon Yönetimi',
+    orders: 'Sipariş Yönetimi',
+    stock: 'Stok Yönetimi',
     sliders: 'Slider Yönetimi',
     announcements: 'Duyuru Yönetimi',
     settings: 'Site Ayarları',
@@ -28,13 +22,23 @@ type Props = {
     groups: PermissionGroup[];
     selected: string[];
     onChange: (permissions: string[]) => void;
+    inherited?: string[];
+    roleName?: string;
     disabled?: boolean;
 };
 
-const PermissionSidecar = ({ groups, selected, onChange, disabled = false }: Props) => {
-    const [activeGroup, setActiveGroup] = useState(HIERARCHY[0].key);
+const PermissionSidecar = ({ groups, selected, onChange, inherited = [], roleName, disabled = false }: Props) => {
+    const [activeGroup, setActiveGroup] = useState('');
     const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
     const [hinting, setHinting] = useState(true);
+
+    const inheritedSet = new Set(inherited);
+
+    useEffect(() => {
+        if (!activeGroup && groups.length > 0) {
+            setActiveGroup(groups[0].group);
+        }
+    }, [groups, activeGroup]);
 
     useEffect(() => {
         const t = setTimeout(() => setHinting(false), 1200);
@@ -42,59 +46,54 @@ const PermissionSidecar = ({ groups, selected, onChange, disabled = false }: Pro
     }, []);
 
     const toggle = useCallback((name: string) => {
-        if (disabled) return;
+        if (disabled || inheritedSet.has(name)) return;
         onChange(selected.includes(name) ? selected.filter(p => p !== name) : [...selected, name]);
-    }, [selected, onChange, disabled]);
+    }, [selected, onChange, disabled, inherited]);
 
     const toggleModule = useCallback((modulePerms: string[]) => {
         if (disabled) return;
-        const allSelected = modulePerms.every(p => selected.includes(p));
+        const toggleable = modulePerms.filter(p => !inheritedSet.has(p));
+        if (toggleable.length === 0) return;
+        const allSelected = toggleable.every(p => selected.includes(p));
         if (allSelected) {
-            onChange(selected.filter(p => !modulePerms.includes(p)));
+            onChange(selected.filter(p => !toggleable.includes(p)));
         } else {
-            onChange([...new Set([...selected, ...modulePerms])]);
+            onChange([...new Set([...selected, ...toggleable])]);
         }
-    }, [selected, onChange, disabled]);
+    }, [selected, onChange, disabled, inherited]);
 
     const toggleAccordion = (mod: string) => {
         setOpenModules(prev => ({ ...prev, [mod]: !prev[mod] }));
     };
 
-    const activeHierarchy = HIERARCHY.find(h => h.key === activeGroup)!;
-    const activeGroups = groups.filter(g => activeHierarchy.modules.includes(g.module));
+    // Effective count: direct OR inherited
+    const effectiveCount = (names: string[]) =>
+        names.filter(p => selected.includes(p) || inheritedSet.has(p)).length;
 
-    // Üst grup için seçili izin sayısı
-    const groupSelectedCount = (modules: string[]) => {
-        const allPerms = groups
-            .filter(g => modules.includes(g.module))
-            .flatMap(g => g.permissions.map(p => p.name));
-        return allPerms.filter(p => selected.includes(p)).length;
-    };
-    const groupTotalCount = (modules: string[]) => {
-        return groups
-            .filter(g => modules.includes(g.module))
-            .flatMap(g => g.permissions).length;
-    };
+    const allPermsInGroup = (g: PermissionGroup) =>
+        g.modules.flatMap(m => m.permissions.map(p => p.name));
+
+    const activeGroupData = groups.find(g => g.group === activeGroup);
 
     return (
         <div className="flex gap-0 border border-white-light dark:border-[#1b2e4b] rounded overflow-hidden">
             {/* Sol Sidecar Nav */}
             <div className="w-52 shrink-0 bg-white-light/30 dark:bg-dark/20 border-r border-white-light dark:border-[#1b2e4b]">
-                {HIERARCHY.map(h => {
-                    const selCount = groupSelectedCount(h.modules);
-                    const totCount = groupTotalCount(h.modules);
-                    const isActive = activeGroup === h.key;
+                {groups.map(g => {
+                    const allPerms = allPermsInGroup(g);
+                    const selCount = effectiveCount(allPerms);
+                    const isActive = activeGroup === g.group;
                     return (
                         <button
-                            key={h.key}
-                            onClick={() => setActiveGroup(h.key)}
+                            key={g.group}
+                            onClick={() => setActiveGroup(g.group)}
                             className={`w-full text-left px-4 py-3 text-sm border-b border-white-light dark:border-[#1b2e4b] transition-colors
                                 ${isActive ? 'bg-primary text-white font-semibold' : 'hover:bg-primary/10 text-black dark:text-white-dark'}`}
                         >
-                            <div>{h.label}</div>
-                            {totCount > 0 && (
+                            <div>{g.group_label}</div>
+                            {allPerms.length > 0 && (
                                 <div className={`text-xs mt-0.5 ${isActive ? 'text-white/80' : 'text-gray-400'}`}>
-                                    {selCount}/{totCount} izin
+                                    {selCount}/{allPerms.length} izin
                                 </div>
                             )}
                         </button>
@@ -104,67 +103,92 @@ const PermissionSidecar = ({ groups, selected, onChange, disabled = false }: Pro
 
             {/* Sağ Panel — Accordion'lar */}
             <div className="flex-1 p-4 space-y-2 overflow-y-auto max-h-[500px]">
-                {activeGroups.length === 0 && (
+                {!activeGroupData || activeGroupData.modules.length === 0 ? (
                     <p className="text-sm text-gray-400 py-4 text-center">Bu grupta henüz izin tanımlanmamış.</p>
-                )}
-                {activeGroups.map(group => {
-                    const names = group.permissions.map(p => p.name);
-                    const selCount = names.filter(n => selected.includes(n)).length;
-                    const isOpen = !!openModules[group.module]; // default closed
+                ) : (
+                    activeGroupData.modules.map(mod => {
+                        const names = mod.permissions.map(p => p.name);
+                        const selCount = effectiveCount(names);
+                        const isOpen = !!openModules[mod.module];
 
-                    return (
-                        <div key={group.module} className="border border-white-light dark:border-[#1b2e4b] rounded">
-                            <button
-                                onClick={() => toggleAccordion(group.module)}
-                                className="w-full flex items-center justify-between px-4 py-2.5 font-semibold text-sm hover:bg-primary/5 transition-colors"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <GroupCheckbox
-                                        names={names}
-                                        selected={selected}
-                                        disabled={disabled}
-                                        onToggle={() => toggleModule(names)}
-                                    />
-                                    <span>{MODULE_LABELS[group.module] || group.module}</span>
-                                    <span className="text-xs text-gray-400 font-normal">{selCount}/{names.length}</span>
-                                </div>
-                                <IconCaretDown className={`transition-transform ${isOpen ? '' : '-rotate-90'} ${hinting && !isOpen ? 'animate-bounce' : ''}`} />
-                            </button>
-                            <AnimateHeight duration={200} height={isOpen ? 'auto' : 0}>
-                                <div className="px-4 pb-3 pt-1 space-y-1 border-t border-white-light dark:border-[#1b2e4b]">
-                                    {group.permissions.map(p => (
-                                        <label
-                                            key={p.name}
-                                            className={`flex items-start gap-2 py-0.5 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="form-checkbox mt-0.5 shrink-0"
-                                                checked={selected.includes(p.name)}
-                                                onChange={() => toggle(p.name)}
-                                                disabled={disabled}
-                                            />
-                                            <span className="text-sm">{p.description}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </AnimateHeight>
-                        </div>
-                    );
-                })}
+                        return (
+                            <div key={mod.module} className="border border-white-light dark:border-[#1b2e4b] rounded">
+                                <button
+                                    onClick={() => toggleAccordion(mod.module)}
+                                    className="w-full flex items-center justify-between px-4 py-2.5 font-semibold text-sm hover:bg-primary/5 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <GroupCheckbox
+                                            names={names}
+                                            selected={selected}
+                                            inherited={inherited}
+                                            disabled={disabled}
+                                            onToggle={() => toggleModule(names)}
+                                        />
+                                        <span>{MODULE_LABELS[mod.module] || mod.module}</span>
+                                        <span className="text-xs text-gray-400 font-normal">{selCount}/{names.length}</span>
+                                    </div>
+                                    <IconCaretDown className={`transition-transform ${isOpen ? '' : '-rotate-90'} ${hinting && !isOpen ? 'animate-bounce' : ''}`} />
+                                </button>
+                                <AnimateHeight duration={200} height={isOpen ? 'auto' : 0}>
+                                    <div className="px-4 pb-3 pt-1 space-y-1 border-t border-white-light dark:border-[#1b2e4b]">
+                                        {mod.permissions.map(p => {
+                                            const isInherited = inheritedSet.has(p.name);
+                                            const isChecked = isInherited || selected.includes(p.name);
+                                            return (
+                                                <label
+                                                    key={p.name}
+                                                    className={`flex items-start gap-2 py-0.5 ${isInherited || disabled ? 'cursor-default' : 'cursor-pointer'}`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        className="form-checkbox mt-0.5 shrink-0"
+                                                        checked={isChecked}
+                                                        onChange={() => toggle(p.name)}
+                                                        disabled={isInherited || disabled}
+                                                    />
+                                                    <span className="text-sm flex items-center gap-1.5 flex-wrap">
+                                                        <span className={isInherited ? 'text-gray-400 dark:text-gray-500' : ''}>
+                                                            {p.description}
+                                                        </span>
+                                                        {isInherited && (
+                                                            <span className="relative group/tip inline-flex">
+                                                                <span className="text-xs px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium leading-none whitespace-nowrap cursor-help">
+                                                                    Rol
+                                                                </span>
+                                                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 hidden group-hover/tip:block w-max max-w-[220px] rounded bg-gray-800 dark:bg-gray-700 px-2.5 py-1.5 text-xs text-white text-center shadow-lg whitespace-normal">
+                                                                    {roleName
+                                                                        ? `"${roleName}" rolünden geliyor. Kaldırmak için rolü düzenleyin.`
+                                                                        : 'Bu izin kullanıcının rolünden geliyor. Kaldırmak için rolü düzenleyin.'}
+                                                                </span>
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </AnimateHeight>
+                            </div>
+                        );
+                    })
+                )}
             </div>
         </div>
     );
 };
 
-// Grup başlık checkbox — indeterminate destekli
 const GroupCheckbox = ({
-    names, selected, disabled, onToggle
-}: { names: string[]; selected: string[]; disabled: boolean; onToggle: () => void }) => {
+    names, selected, inherited, disabled, onToggle
+}: { names: string[]; selected: string[]; inherited: string[]; disabled: boolean; onToggle: () => void }) => {
     const ref = useRef<HTMLInputElement>(null);
-    const selCount = names.filter(n => selected.includes(n)).length;
-    const allSel = selCount === names.length;
-    const indeterminate = selCount > 0 && !allSel;
+    const inheritedSet = new Set(inherited);
+
+    const effective = names.filter(n => selected.includes(n) || inheritedSet.has(n));
+    const toggleable = names.filter(n => !inheritedSet.has(n));
+    const allEffective = effective.length === names.length;
+    const indeterminate = effective.length > 0 && !allEffective;
+    const allInherited = toggleable.length === 0;
 
     useEffect(() => {
         if (ref.current) ref.current.indeterminate = indeterminate;
@@ -175,10 +199,10 @@ const GroupCheckbox = ({
             ref={ref}
             type="checkbox"
             className="form-checkbox shrink-0"
-            checked={allSel}
-            onChange={(e) => { e.stopPropagation(); onToggle(); }}
+            checked={allEffective}
+            onChange={(e) => { e.stopPropagation(); if (!allInherited) onToggle(); }}
             onClick={(e) => e.stopPropagation()}
-            disabled={disabled}
+            disabled={disabled || allInherited}
         />
     );
 };

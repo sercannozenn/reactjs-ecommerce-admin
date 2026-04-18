@@ -23,15 +23,17 @@ import CouponShow from '../pages/coupon/Show';
 import StockDashboard from '../pages/stock/StockDashboard';
 import StockMovements from '../pages/stock/StockMovements';
 import ProductStockMovements from '../pages/stock/ProductStockMovements';
+import OrderList from '../pages/order/OrderList';
+import OrderDetailPage from '../pages/order/OrderDetail';
 import Profile from '../pages/profile/Profile';
 import RoleManagement from '../pages/role/RoleManagement';
 import Forbidden from '../pages/Forbidden';
 import PermissionRoute from './PermissionRoute';
-import OperatorList from '../pages/authorization/OperatorList';
-import OperatorEdit from '../pages/authorization/OperatorEdit';
+import SystemUserList from '../pages/authorization/SystemUserList';
+import SystemUserEdit from '../pages/authorization/SystemUserEdit';
 import MemberListStub from '../pages/authorization/MemberListStub';
-import OperatorRoleList from '../pages/roles/OperatorRoleList';
-import OperatorRoleEdit from '../pages/roles/OperatorRoleEdit';
+import SystemUserRoleList from '../pages/roles/SystemUserRoleList';
+import SystemUserRoleEdit from '../pages/roles/SystemUserRoleEdit';
 import MemberRoleListStub from '../pages/roles/MemberRoleListStub';
 const Index = lazy(() => import('../pages/Index'));
 const Login = lazy(() => import('../pages/auth/Login'));
@@ -263,6 +265,20 @@ const routes = [
         protected: true
     },
     {
+        path: '/siparisler',
+        name: 'OrderList',
+        element: <PermissionRoute permission="orders.view-any"><OrderList /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/siparisler/:orderNumber',
+        name: 'OrderDetail',
+        element: <PermissionRoute permission="orders.view-any"><OrderDetailPage /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
         path: '/stok',
         name: 'StockDashboard',
         element: <PermissionRoute permission="stock.view"><StockDashboard /></PermissionRoute>,
@@ -285,21 +301,21 @@ const routes = [
     },
     {
         path: '/roller',
-        element: <Navigate to="/roller/operatorler" replace />,
+        element: <Navigate to="/roller/sistem-kullanicilari" replace />,
         layout: 'default',
         protected: true
     },
     {
-        path: '/yetkilendirme/operatorler',
-        name: 'OperatorList',
-        element: <PermissionRoute permission="roles.view-any"><OperatorList /></PermissionRoute>,
+        path: '/yetkilendirme/sistem-kullanicilari',
+        name: 'SystemUserList',
+        element: <PermissionRoute permission="roles.view-any"><SystemUserList /></PermissionRoute>,
         layout: 'default',
         protected: true
     },
     {
-        path: '/yetkilendirme/operatorler/:id',
-        name: 'OperatorEdit',
-        element: <PermissionRoute permission="roles.assign-permission-to-user"><OperatorEdit /></PermissionRoute>,
+        path: '/yetkilendirme/sistem-kullanicilari/:id',
+        name: 'SystemUserEdit',
+        element: <PermissionRoute permission="roles.assign-permission-to-user"><SystemUserEdit /></PermissionRoute>,
         layout: 'default',
         protected: true
     },
@@ -311,16 +327,16 @@ const routes = [
         protected: true
     },
     {
-        path: '/roller/operatorler',
-        name: 'OperatorRoleList',
-        element: <PermissionRoute permission="roles.view-any"><OperatorRoleList /></PermissionRoute>,
+        path: '/roller/sistem-kullanicilari',
+        name: 'SystemUserRoleList',
+        element: <PermissionRoute permission="roles.view-any"><SystemUserRoleList /></PermissionRoute>,
         layout: 'default',
         protected: true
     },
     {
-        path: '/roller/operatorler/:id',
-        name: 'OperatorRoleEdit',
-        element: <PermissionRoute permission="roles.update"><OperatorRoleEdit /></PermissionRoute>,
+        path: '/roller/sistem-kullanicilari/:id',
+        name: 'SystemUserRoleEdit',
+        element: <PermissionRoute permission="roles.update"><SystemUserRoleEdit /></PermissionRoute>,
         layout: 'default',
         protected: true
     },
