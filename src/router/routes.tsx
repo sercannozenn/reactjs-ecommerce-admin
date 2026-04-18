@@ -25,6 +25,7 @@ import StockMovements from '../pages/stock/StockMovements';
 import ProductStockMovements from '../pages/stock/ProductStockMovements';
 import OrderList from '../pages/order/OrderList';
 import OrderDetailPage from '../pages/order/OrderDetail';
+import ReviewList from '../pages/review/ReviewList';
 import Profile from '../pages/profile/Profile';
 import RoleManagement from '../pages/role/RoleManagement';
 import Forbidden from '../pages/Forbidden';
@@ -275,6 +276,13 @@ const routes = [
         path: '/siparisler/:orderNumber',
         name: 'OrderDetail',
         element: <PermissionRoute permission="orders.view-any"><OrderDetailPage /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/yorumlar',
+        name: 'ReviewList',
+        element: <PermissionRoute permission="reviews.view-any"><ReviewList /></PermissionRoute>,
         layout: 'default',
         protected: true
     },

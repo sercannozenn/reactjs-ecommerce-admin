@@ -178,7 +178,7 @@ const Sidebar = () => {
                             )}
 
                             {/* ── Ürün & Satış ── */}
-                            {(can('products.view-any') || can('discounts.view-any') || can('coupons.view-any') || can('stock.view') || can('orders.view-any')) && (
+                            {(can('products.view-any') || can('discounts.view-any') || can('coupons.view-any') || can('stock.view') || can('orders.view-any') || can('reviews.view-any')) && (
                                 <h2 className="py-3 px-7 flex items-center font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1 mt-2">
                                     <IconMinus className="w-4 h-5 flex-none hidden" />
                                     <span>Ürün & Satış</span>
@@ -334,6 +334,19 @@ const Sidebar = () => {
                                         </li>
                                     </ul>
                                 </AnimateHeight>
+                            </li>
+                            )}
+
+                            {can('reviews.view-any') && (
+                            <li className="menu nav-item">
+                                <NavLink to="/yorumlar" className="nav-link group">
+                                    <div className="flex items-center">
+                                        <IconMenuComponents className="group-hover:!text-primary shrink-0" />
+                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                            Yorum Moderasyonu
+                                        </span>
+                                    </div>
+                                </NavLink>
                             </li>
                             )}
 
