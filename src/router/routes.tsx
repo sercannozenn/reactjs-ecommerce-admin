@@ -17,6 +17,9 @@ import SettingsGroupOrder from '../pages/settings/SettingsGroupOrder';
 import ProductDiscountAdd from '../pages/product_discount/ProductDiscountAdd';
 import ProductDiscountList from '../pages/product_discount/ProductDiscountList';
 import ProductDiscountHistory from '../pages/product/ProductDiscountHistory';
+import CouponIndex from '../pages/coupon/Index';
+import CouponForm from '../pages/coupon/Form';
+import CouponShow from '../pages/coupon/Show';
 import Profile from '../pages/profile/Profile';
 import RoleManagement from '../pages/role/RoleManagement';
 import Forbidden from '../pages/Forbidden';
@@ -225,6 +228,34 @@ const routes = [
         path: '/urun-indirim/:id/duzenle',
         name: 'ProductDiscountEdit',
         element: <PermissionRoute permission="discounts.update"><ProductDiscountAdd /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/kuponlar',
+        name: 'CouponList',
+        element: <PermissionRoute permission="coupons.view-any"><CouponIndex /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/kuponlar/ekle',
+        name: 'CouponAdd',
+        element: <PermissionRoute permission="coupons.create"><CouponForm /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/kuponlar/:id/duzenle',
+        name: 'CouponEdit',
+        element: <PermissionRoute permission="coupons.update"><CouponForm /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/kuponlar/:id',
+        name: 'CouponShow',
+        element: <PermissionRoute permission="coupons.view-any"><CouponShow /></PermissionRoute>,
         layout: 'default',
         protected: true
     },
