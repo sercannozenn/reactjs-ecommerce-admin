@@ -20,6 +20,9 @@ import ProductDiscountHistory from '../pages/product/ProductDiscountHistory';
 import CouponIndex from '../pages/coupon/Index';
 import CouponForm from '../pages/coupon/Form';
 import CouponShow from '../pages/coupon/Show';
+import StockDashboard from '../pages/stock/StockDashboard';
+import StockMovements from '../pages/stock/StockMovements';
+import ProductStockMovements from '../pages/stock/ProductStockMovements';
 import Profile from '../pages/profile/Profile';
 import RoleManagement from '../pages/role/RoleManagement';
 import Forbidden from '../pages/Forbidden';
@@ -256,6 +259,27 @@ const routes = [
         path: '/kuponlar/:id',
         name: 'CouponShow',
         element: <PermissionRoute permission="coupons.view-any"><CouponShow /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/stok',
+        name: 'StockDashboard',
+        element: <PermissionRoute permission="stock.view"><StockDashboard /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/stok/hareketler',
+        name: 'StockMovements',
+        element: <PermissionRoute permission="stock.view"><StockMovements /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/urunler/:id/stok',
+        name: 'ProductStockMovements',
+        element: <PermissionRoute permission="stock.view"><ProductStockMovements /></PermissionRoute>,
         layout: 'default',
         protected: true
     },

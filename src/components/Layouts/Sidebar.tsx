@@ -178,7 +178,7 @@ const Sidebar = () => {
                             )}
 
                             {/* ── Ürün & Satış ── */}
-                            {(can('products.view-any') || can('discounts.view-any') || can('coupons.view-any')) && (
+                            {(can('products.view-any') || can('discounts.view-any') || can('coupons.view-any') || can('stock.view')) && (
                                 <h2 className="py-3 px-7 flex items-center font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1 mt-2">
                                     <IconMinus className="w-4 h-5 flex-none hidden" />
                                     <span>Ürün & Satış</span>
@@ -279,6 +279,34 @@ const Sidebar = () => {
                                             <NavLink to={route('CouponAdd')} >Kupon Ekleme</NavLink>
                                         </li>
                                         )}
+                                    </ul>
+                                </AnimateHeight>
+                            </li>
+                            )}
+
+                            {can('stock.view') && (
+                            <li className="menu nav-item">
+                                <button type="button"
+                                        className={`${currentMenu === 'stock' ? 'active' : ''} nav-link group w-full`}
+                                        onClick={() => toggleMenu('stock')}>
+                                    <div className="flex items-center">
+                                        <IconMenuComponents className="group-hover:!text-primary shrink-0" />
+                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                            Stok Yönetimi
+                                        </span>
+                                    </div>
+                                    <div className={currentMenu !== 'stock' ? 'rtl:rotate-90 -rotate-90' : ''}>
+                                        <IconCaretDown />
+                                    </div>
+                                </button>
+                                <AnimateHeight duration={300} height={currentMenu === 'stock' ? 'auto' : 0}>
+                                    <ul className="sub-menu text-gray-500">
+                                        <li>
+                                            <NavLink to={route('StockDashboard')}>Düşük Stok</NavLink>
+                                        </li>
+                                        <li>
+                                            <NavLink to={route('StockMovements')}>Hareket Raporu</NavLink>
+                                        </li>
                                     </ul>
                                 </AnimateHeight>
                             </li>
