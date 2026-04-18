@@ -62,6 +62,9 @@ type FormDataType = {
     existing_images: [];
     featured_image: string;
     gender?: string | null;
+    meta_title: string;
+    meta_description: string;
+    og_image_url: string;
 };
 type SizeType = {
     size: string;
@@ -88,6 +91,9 @@ const initialFormState: FormDataType = {
     existing_images: [],
     featured_image: '',
     gender: null,
+    meta_title: '',
+    meta_description: '',
+    og_image_url: '',
 };
 const customNoOptionsMessage = () => {
     return (
@@ -881,6 +887,71 @@ const ProductAdd = () => {
                         </div>
                     </div>
 
+                    {/* Meta SEO alanları */}
+                    <div className="col-span-2">
+                        <hr className="mb-5 border-info" />
+                        <div className="flex items-center justify-between mb-5">
+                            <h5 className="font-semibold text-lg dark:text-white-light">
+                                Meta SEO (Google / Sosyal Medya)
+                            </h5>
+                        </div>
+                        <div className="grid xl:grid-cols-2 gap-6 grid-cols-1">
+                            <div className="mb-5">
+                                <label className="block text-sm font-medium mb-1">
+                                    Meta Başlık
+                                    <span className={`ml-2 text-xs ${(formData.meta_title?.length || 0) > 160 ? 'text-red-500' : 'text-gray-400'}`}>
+                                        {formData.meta_title?.length || 0}/160
+                                    </span>
+                                </label>
+                                <input type="text" placeholder={`${formData.name || 'Ürün Adı'} | Kermes`}
+                                       className="form-input"
+                                       name="meta_title"
+                                       maxLength={160}
+                                       value={formData.meta_title || ''}
+                                       onChange={handleInputChange}
+                                />
+                                {errors.meta_title && <p className="text-red-500 text-xs mt-1">{errors.meta_title[0]}</p>}
+                            </div>
+                            <div className="mb-5">
+                                <label className="block text-sm font-medium mb-1">
+                                    Meta Açıklama
+                                    <span className={`ml-2 text-xs ${(formData.meta_description?.length || 0) > 320 ? 'text-red-500' : 'text-gray-400'}`}>
+                                        {formData.meta_description?.length || 0}/320
+                                    </span>
+                                </label>
+                                <textarea placeholder="Ürün açıklaması (boş bırakılırsa kısa açıklama kullanılır)"
+                                          className="form-textarea"
+                                          name="meta_description"
+                                          maxLength={320}
+                                          rows={3}
+                                          value={formData.meta_description || ''}
+                                          onChange={(e) => handleInputChange(e as any)}
+                                />
+                                {errors.meta_description && <p className="text-red-500 text-xs mt-1">{errors.meta_description[0]}</p>}
+                            </div>
+                            <div className="mb-5">
+                                <label className="block text-sm font-medium mb-1">OG Görsel URL</label>
+                                <input type="url" placeholder="https://..."
+                                       className="form-input"
+                                       name="og_image_url"
+                                       value={formData.og_image_url || ''}
+                                       onChange={handleInputChange}
+                                />
+                                {errors.og_image_url && <p className="text-red-500 text-xs mt-1">{errors.og_image_url[0]}</p>}
+                            </div>
+                        </div>
+                        {/* Google Önizleme */}
+                        <div className="mt-2 p-4 border border-gray-200 rounded-lg bg-white dark:bg-gray-800">
+                            <p className="text-xs text-gray-400 mb-2">Google Önizleme</p>
+                            <p className="text-blue-700 text-base font-medium truncate">
+                                {formData.meta_title || (formData.name ? `${formData.name} | Kermes` : 'Ürün Adı | Kermes')}
+                            </p>
+                            <p className="text-green-700 text-xs mb-1">kermes.com › urun › {formData.slug || 'urun-slug'}</p>
+                            <p className="text-gray-600 text-sm line-clamp-2">
+                                {formData.meta_description || formData.short_description?.replace(/<[^>]+>/g, '') || 'Meta açıklama girilmemiş.'}
+                            </p>
+                        </div>
+                    </div>
 
                     <div className="col-span-2">
                         <hr className="my-5 border-gray-300" />
