@@ -37,7 +37,7 @@ api.interceptors.request.use((config) => {
         const token = store.getState().auth.token;
 
         if (!token) {
-            window.location.href = '/login';
+            window.location.href = '/giris-yap';
             throw new Error('Token bulunamadı. Kullanıcı giriş yapmalıdır.');
         }
 
@@ -81,7 +81,7 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError, null);
                 store.dispatch(logout());
-                window.location.href = '/login';
+                window.location.href = '/giris-yap';
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
