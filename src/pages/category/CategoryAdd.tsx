@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import { setPageTitle } from '../../store/themeConfigSlice';
 import { useDispatch } from 'react-redux';
 import { CategoryService } from '../../api/services/CategoryService';
+import IconX from '../../components/Icon/IconX';
 
 const animatedComponents = makeAnimated();
 type Tag = {
@@ -17,7 +18,10 @@ type Category = {
     id: number;
     name: string;
     parent_category_id: number | null;
+    image_url?: string | null;
 };
+
+type BreadcrumbItem = { id: number; name: string; slug: string };
 
 type FlatOption = { id: number; name: string; depth: number };
 
@@ -45,7 +49,18 @@ const customNoOptionsMessage = () => {
 const CategoryAdd = () => {
     const dispatch = useDispatch();
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        parent_category_id: string;
+        slug: string;
+        name: string;
+        description: string;
+        tags: any[];
+        is_active: boolean;
+        keywords: string;
+        seo_description: string;
+        author: string;
+        sort_order: string;
+    }>({
         parent_category_id: '',
         slug: '',
         name: '',
@@ -54,13 +69,18 @@ const CategoryAdd = () => {
         is_active: true,
         keywords: '',
         seo_description: '',
-        author: ''
+        author: '',
+        sort_order: ''
     });
     const [categories, setCategories] = useState([]); // Üst kategoriler
     const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
     const [errors, setErrors] = useState<Record<string, string[]>>({}); // Validation hataları için state
     const { id } = useParams<{ id: string }>(); // id urlden alınır.
     const [isEdit, setIsEdit] = useState(false);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [removeImage, setRemoveImage] = useState<boolean>(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
 
     useEffect(() => {
         dispatch(setPageTitle('Kategori ' + (isEdit ? 'Güncelleme' : 'Ekleme')));
@@ -70,8 +90,6 @@ const CategoryAdd = () => {
         const fetchCreateData = async () => {
             try {
                 const response = await CategoryService.create();
-                console.log('response-2 s');
-                console.log(response);
                 setCategories(response.data.categories || []); // Gelen kategoriler
                 setTagsOptions(response.data.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name }))); // Etiketleri dönüştür
             } catch (error) {
@@ -89,11 +107,17 @@ const CategoryAdd = () => {
                     {
                         ...prev,
                         ...category,
-                        tags: category.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name }))
+                        sort_order: category?.sort_order ?? '',
+                        tags: (category?.tags ?? []).map((tag: Tag) => ({ value: tag.id, label: tag.name }))
                     }
                 ));
+                // Sprint 17: mevcut görsel önizlemesi (backend image_url accessor döndürür)
+                if (category?.image_url) {
+                    setImagePreview(category.image_url);
+                }
+                // Sprint 18: breadcrumb
+                setBreadcrumb(category?.breadcrumb ?? []);
             }).catch((error) => {
-                console.log(error);
                 Swal.fire({
                     icon: 'error',
                     title: 'Hata!',
@@ -126,9 +150,14 @@ const CategoryAdd = () => {
             is_active: true,
             keywords: '',
             seo_description: '',
-            author: ''
+            author: '',
+            sort_order: ''
         });
         setErrors({});
+        setImageFile(null);
+        setImagePreview(null);
+        setRemoveImage(false);
+        setBreadcrumb([]);
     };
     const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const sanitizedSlug = SlugHelper.generate(e.target.value); // Girilen değeri anında sluglaştır
@@ -155,17 +184,37 @@ const CategoryAdd = () => {
     const handleSelectChange = (selectedOptions: any) => {
         setFormData({ ...formData, tags: selectedOptions });
     };
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+            // Yeni görsel akışı zaten eskiyi siler, remove flag'i sıfırla
+            setRemoveImage(false);
+            if (errors.image) {
+                setErrors((prev) => ({ ...prev, image: [] }));
+            }
+        }
+    };
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        // Edit modunda backend'e remove_image flag'i gönderilmesi için
+        setRemoveImage(true);
+    };
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setErrors({}); //Yeni istekten önce hataları temizle
 
+        const payload = { ...formData, image: imageFile };
+
         try {
             if (id) {
-                const response = await CategoryService.update(id, formData);
+                const response = await CategoryService.update(id, payload as any, removeImage);
                 Swal.fire({
                     icon: 'success',
                     title: 'Başarılı!',
-                    text: `Kategori başarıyla güncellendi! ID: ${response.data.id}`,
+                    text: `Kategori başarıyla güncellendi! ID: ${response.data?.id ?? ''}`,
                     confirmButtonText: 'Tamam',
                     padding: '2em',
                     customClass: {
@@ -174,7 +223,7 @@ const CategoryAdd = () => {
                     }
                 });
             } else {
-                const response = await CategoryService.add(formData);
+                await CategoryService.add(payload as any);
                 freshFormData();
                 Swal.fire({
                     icon: 'success',
@@ -202,11 +251,22 @@ const CategoryAdd = () => {
     return (
         <div className="">
             <div className="panel">
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between mb-2">
                     <h5 className="font-semibold text-lg dark:text-white-light">
                         Kategori {isEdit ? 'Güncelleme' : 'Ekleme'}
                     </h5>
                 </div>
+                {/* Sprint 18: Edit modunda breadcrumb göstergesi */}
+                {isEdit && breadcrumb.length > 0 && (
+                    <nav className="text-xs text-gray-400 mb-4" aria-label="breadcrumb">
+                        {breadcrumb.map((b, i) => (
+                            <span key={b.id}>
+                                {i > 0 && <span className="mx-1">›</span>}
+                                <span>{b.name}</span>
+                            </span>
+                        ))}
+                    </nav>
+                )}
                 <form className="grid xl:grid-cols-2 gap-6 grid-cols-1" onSubmit={handleSubmit}>
                     <div className="mb-5">
                         <select className="form-select text-white-dark"
@@ -271,7 +331,22 @@ const CategoryAdd = () => {
                         />
                         {errors.tags && <p className="text-red-500 text-xs mt-1">{errors.tags[0]}</p>}
                     </div>
-                    <div className="mb-5"></div>
+                    {/* Sprint 17: sort_order */}
+                    <div className="mb-5">
+                        <input
+                            type="number"
+                            placeholder="Sıralama (opsiyonel)"
+                            className="form-input"
+                            name="sort_order"
+                            value={formData.sort_order}
+                            onChange={handleInputChange}
+                            min={0}
+                        />
+                        {errors.sort_order && <p className="text-red-500 text-xs mt-1">{errors.sort_order[0]}</p>}
+                        <span className="badge bg-info block text-xs hover:top-0">
+                            Düşük değer önce gelir. Boş bırakılırsa ada göre sıralanır.
+                        </span>
+                    </div>
                     <div className="">
                         <label className="flex items-center cursor-pointer">
                             <input type="checkbox" className="form-checkbox text-info"
@@ -283,6 +358,38 @@ const CategoryAdd = () => {
                             />
                             <span className=" text-white-dark">Aktif</span>
                         </label>
+                    </div>
+                    {/* Sprint 17: Görsel yükleme */}
+                    <div className="col-span-2">
+                        <hr className="mb-5 border-info" />
+                        <div className="flex items-center justify-between mb-3">
+                            <h5 className="font-semibold text-lg dark:text-white-light">
+                                Kategori Görseli
+                            </h5>
+                        </div>
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="form-input"
+                            onChange={handleImageChange}
+                        />
+                        {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image[0]}</p>}
+                        <span className="badge bg-info block text-xs hover:top-0 mt-1">
+                            JPEG, PNG veya WEBP — en fazla 2MB. Opsiyonel.
+                        </span>
+                        {imagePreview && (
+                            <div className="mt-4 relative inline-block">
+                                <img src={imagePreview} alt="Kategori Görseli Önizleme" className="w-48 h-32 object-cover border rounded" />
+                                <button
+                                    type="button"
+                                    onClick={handleRemoveImage}
+                                    className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-bl hover:bg-red-600"
+                                    title="Kaldır"
+                                >
+                                    <IconX />
+                                </button>
+                            </div>
+                        )}
                     </div>
                     <div className="col-span-2">
                         <hr className="mb-5 border-info" />

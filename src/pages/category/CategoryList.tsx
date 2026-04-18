@@ -14,7 +14,7 @@ import { TagService } from '../../api/services/TagService';
 import { useRouteNavigator } from '../../utils/RouteHelper';
 import IconRefresh from '../../components/Icon/IconRefresh';
 import IconSettings from '../../components/Icon/IconSettings';
-import { Collapse, Tooltip } from '@mantine/core';
+import { Collapse, Switch, Tooltip } from '@mantine/core';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
 import Flatpickr from 'react-flatpickr';
@@ -32,6 +32,9 @@ type Category = {
     parent_name: string;
     is_active: number;
     formatted_created_at: string;
+    deleted_at?: string | null;
+    sort_order?: number | null;
+    image?: string | null;
 };
 const CategoryList = () => {
     const can = useCan();
@@ -60,6 +63,7 @@ const CategoryList = () => {
     const [filterDescription, setFilterDescription] = useState('');
     const [filterStartDate, setFilterStartDate] = useState('');
     const [filterEndDate, setFilterEndDate] = useState('');
+    const [showDeleted, setShowDeleted] = useState(false);
 
     const statusOptions = [
         { value: 1, label: 'Aktif' },
@@ -143,7 +147,10 @@ const CategoryList = () => {
                 return;
             }
 
-            if (info.total_products === 0) {
+            const totalProducts = info.total_products ?? 0;
+            const exclusiveProducts = info.exclusive_products ?? 0;
+
+            if (totalProducts === 0) {
                 const result = await Swal.fire({
                     icon: 'warning',
                     title: 'Kategori Sil',
@@ -161,17 +168,17 @@ const CategoryList = () => {
             }
 
             let exclusiveHtml = '';
-            if (info.exclusive_products > 0) {
-                exclusiveHtml = `<p class="text-danger text-sm mt-2"><strong>${info.exclusive_products} ürün</strong> sadece bu kategoride yer alıyor ve taşınmazsa kategorisiz kalacak.</p>`;
+            if (exclusiveProducts > 0) {
+                exclusiveHtml = `<p class="text-danger text-sm mt-2"><strong>${exclusiveProducts} ürün</strong> sadece bu kategoride yer alıyor ve taşınmazsa kategorisiz kalacak.</p>`;
             }
 
             const result = await Swal.fire({
                 icon: 'warning',
                 title: 'Kategoride Ürün Var',
                 html: `
-                    <p class="mb-3"><strong>"${name}"</strong> kategorisinde <strong>${info.total_products} ürün</strong> bulunuyor.</p>
+                    <p class="mb-3"><strong>"${name}"</strong> kategorisinde <strong>${totalProducts} ürün</strong> bulunuyor.</p>
                     ${exclusiveHtml}
-                    <button id="swal-view-products-btn" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 16px;background:#4361ee;color:#fff;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${info.total_products} ürünü görüntüle</button>
+                    <button id="swal-view-products-btn" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 16px;background:#4361ee;color:#fff;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${totalProducts} ürünü görüntüle</button>
                 `,
                 showCancelButton: true,
                 showDenyButton: true,
@@ -243,6 +250,41 @@ const CategoryList = () => {
     const handleEdit = (id: number) => {
         navigateToRoute('CategoryEdit', { id });
     };
+
+    const handleRestore = async (id: number, name: string) => {
+        const result = await Swal.fire({
+            icon: 'question',
+            title: 'Geri Al',
+            text: `"${name}" kategorisini geri almak istediğinize emin misiniz?`,
+            showCancelButton: true,
+            confirmButtonText: 'Evet, Geri Al',
+            cancelButtonText: 'İptal',
+            padding: '2em',
+            customClass: { popup: 'sweet-alerts' }
+        });
+        if (!result.isConfirmed) return;
+
+        try {
+            await CategoryService.restore(id);
+            setRefreshLoad(prev => !prev);
+            Swal.fire({
+                icon: 'success',
+                title: 'Geri Alındı!',
+                text: `${name} adlı kategori geri alındı.`,
+                confirmButtonText: 'Tamam',
+                customClass: { popup: 'sweet-alerts' }
+            });
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.errors?.error ?? `${name} adlı kategori geri alınamadı.`;
+            Swal.fire({
+                icon: 'error',
+                title: 'Geri Alınamadı!',
+                text: errorMessage,
+                confirmButtonText: 'Tamam',
+                customClass: { popup: 'sweet-alerts' }
+            });
+        }
+    };
     const handleChangeStatus = async (id: number) => { // ✅ currentStatus kaldırıldı
         try {
             const response = await CategoryService.changeStatus(id);
@@ -311,6 +353,7 @@ const CategoryList = () => {
                 if (filterDescription) filters.description = filterDescription;
                 if (filterStartDate) filters.start_date = filterStartDate;
                 if (filterEndDate) filters.end_date = filterEndDate;
+                if (showDeleted) filters.show_deleted = true;
 
                 const response = await CategoryService.list(page, rowsPerPage, '', sortStatus, filters);
                 setData(response.data.data);
@@ -322,7 +365,7 @@ const CategoryList = () => {
             }
         };
         loadCategories();
-    }, [page, rowsPerPage, sortStatus, refreshLoad, filterTags, filterParentCategory, filterStatus, filterName, filterSlug, filterDescription, filterStartDate, filterEndDate]);
+    }, [page, rowsPerPage, sortStatus, refreshLoad, filterTags, filterParentCategory, filterStatus, filterName, filterSlug, filterDescription, filterStartDate, filterEndDate, showDeleted]);
 
     return (
         <div>
@@ -330,6 +373,12 @@ const CategoryList = () => {
                 <div className="flex md:items-center md:flex-row flex-col mb-5 gap-5">
                     <h5 className="font-semibold text-lg dark:text-white-light">Kategori Listesi</h5>
                     <div className="flex items-center gap-3 ltr:ml-auto rtl:mr-auto">
+                        <Switch
+                            label="Silinmişleri Göster"
+                            size="sm"
+                            checked={showDeleted}
+                            onChange={(e) => { setShowDeleted(e.currentTarget.checked); setPage(1); }}
+                        />
                         <div className="dropdown">
                             <Dropdown
                                 placement={`${isRtl ? 'bottom-end' : 'bottom-start'}`}
@@ -563,21 +612,36 @@ const CategoryList = () => {
                                 title: 'İşlemler',
                                 render: (record: Category) => (
                                     <div className="flex space-x-2">
-                                        {can('categories.update') && (
-                                        <button
-                                            onClick={() => handleEdit(record.id)}
-                                            className="p-2"
-                                        >
-                                            <IconEdit />
-                                        </button>
-                                        )}
-                                        {can('categories.delete') && (
-                                        <button
-                                            onClick={() => handleDelete(record.id, record.name)}
-                                            className="p-2"
-                                        >
-                                            <IconXCircle />
-                                        </button>
+                                        {record.deleted_at ? (
+                                            can('categories.update') && (
+                                                <Tooltip label="Geri Al">
+                                                    <button
+                                                        onClick={() => handleRestore(record.id, record.name)}
+                                                        className="p-2"
+                                                    >
+                                                        <IconRefresh className="text-blue-500 hover:text-blue-700" />
+                                                    </button>
+                                                </Tooltip>
+                                            )
+                                        ) : (
+                                            <>
+                                                {can('categories.update') && (
+                                                    <button
+                                                        onClick={() => handleEdit(record.id)}
+                                                        className="p-2"
+                                                    >
+                                                        <IconEdit />
+                                                    </button>
+                                                )}
+                                                {can('categories.delete') && (
+                                                    <button
+                                                        onClick={() => handleDelete(record.id, record.name)}
+                                                        className="p-2"
+                                                    >
+                                                        <IconXCircle />
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 )
