@@ -34,7 +34,7 @@ type Category = {
     formatted_created_at: string;
     deleted_at?: string | null;
     sort_order?: number | null;
-    image?: string | null;
+    image_url?: string | null;
 };
 const CategoryList = () => {
     const can = useCan();

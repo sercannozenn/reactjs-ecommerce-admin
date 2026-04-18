@@ -108,7 +108,7 @@ const CategoryAdd = () => {
                         ...prev,
                         ...category,
                         sort_order: category?.sort_order ?? '',
-                        tags: (category?.tags ?? []).map((tag: Tag) => ({ value: tag.id, label: tag.name }))
+                        tags: category?.tags ?? []
                     }
                 ));
                 // Sprint 17: mevcut görsel önizlemesi (backend image_url accessor döndürür)
