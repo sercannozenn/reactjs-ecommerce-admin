@@ -178,7 +178,7 @@ const Sidebar = () => {
                             )}
 
                             {/* ── Ürün & Satış ── */}
-                            {(can('products.view-any') || can('discounts.view-any') || can('coupons.view-any') || can('stock.view') || can('orders.view-any') || can('reviews.view-any')) && (
+                            {(can('products.view-any') || can('product_attribute.manage') || can('discounts.view-any') || can('coupons.view-any') || can('stock.view') || can('orders.view-any') || can('reviews.view-any')) && (
                                 <h2 className="py-3 px-7 flex items-center font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1 mt-2">
                                     <IconMinus className="w-4 h-5 flex-none hidden" />
                                     <span>Ürün & Satış</span>
@@ -213,8 +213,26 @@ const Sidebar = () => {
                                             <NavLink to={route('ProductAdd')} >Ürün Ekleme</NavLink>
                                         </li>
                                         )}
+                                        {can('product_attribute.manage') && (
+                                        <li>
+                                            <NavLink to={route('ProductAttributeList')}>Ürün Özellikleri</NavLink>
+                                        </li>
+                                        )}
                                     </ul>
                                 </AnimateHeight>
+                            </li>
+                            )}
+
+                            {!can('products.view-any') && can('product_attribute.manage') && (
+                            <li className="menu nav-item">
+                                <NavLink to={route('ProductAttributeList')} className="nav-link group">
+                                    <div className="flex items-center">
+                                        <IconMenuComponents className="group-hover:!text-primary shrink-0" />
+                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                            Ürün Özellikleri
+                                        </span>
+                                    </div>
+                                </NavLink>
                             </li>
                             )}
 
@@ -458,6 +476,11 @@ const Sidebar = () => {
                                         {can('settings.update') && (
                                         <li>
                                             <NavLink to={route('SettingsAdd')} >Ayar Ekleme</NavLink>
+                                        </li>
+                                        )}
+                                        {can('settings.update') && (
+                                        <li>
+                                            <NavLink to={route('HomepageThemeSelector')} >Anasayfa Teması</NavLink>
                                         </li>
                                         )}
                                     </ul>

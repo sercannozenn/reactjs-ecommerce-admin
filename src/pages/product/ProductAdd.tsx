@@ -1,971 +1,528 @@
-import React, { useEffect, useState } from 'react';
-import Select, { ActionMeta, MultiValue, SingleValue } from 'react-select';
-import makeAnimated from 'react-select/animated';
-import { SlugHelper } from '../../helpers/helpers';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import Swal from 'sweetalert2';
 
-const escapeHtml = (str: string) =>
-    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-import { useParams } from 'react-router-dom';
 import { setPageTitle } from '../../store/themeConfigSlice';
-import { useDispatch } from 'react-redux';
 import { ProductService } from '../../api/services/ProductService';
-import { JoditEditorComponent } from '../../components/Editors/JoditEditor';
-import { DropEvent, useDropzone, FileRejection, Accept } from 'react-dropzone';
-import { useRouteNavigator } from '../../utils/RouteHelper';
-import IconMinusCircle from '../../components/Icon/IconMinusCircle';
-import IconPlusCircle from '../../components/Icon/IconPlusCircle';
-import { Button, Input } from '@mantine/core';
+import { BrandService } from '../../api/services/BrandService';
+import { CategoryService } from '../../api/services/CategoryService';
+import { TagService } from '../../api/services/TagService';
+import { useCan } from '../../utils/permissions';
+import { route } from '../../utils/RouteHelper';
 
-type Tag = {
-    id: number;
-    name: string;
-};
-type Category = {
-    id: number;
-    name: string;
-};
-type Brand = {
-    id: number;
-    name: string;
-};
-type SelectOptionsType = {
-    value: number,
-    label: string
+import {
+    ProductFormProvider,
+    useProductForm,
+    TabKey,
+    mapResourceToForm,
+    firstErrorTab,
+} from '../../components/Products/ProductFormContext';
+import { humanizeFieldKey } from '../../utils/formErrors';
+import GeneralTab from '../../components/Products/tabs/GeneralTab';
+import StockVariantTab from '../../components/Products/tabs/StockVariantTab';
+import PriceTab from '../../components/Products/tabs/PriceTab';
+import MediaTab from '../../components/Products/tabs/MediaTab';
+import SeoPublishTab from '../../components/Products/tabs/SeoPublishTab';
+import { useProductAutosave } from '../../hooks/useProductAutosave';
+import type {
+    ProductDraftPayload,
+    ProductUpdatePayload,
+} from '../../types/product';
+
+interface Option {
+    value: number;
+    label: string;
 }
-type GenderOption = { value: string; label: string }
+interface StrOption {
+    value: string;
+    label: string;
+}
 
-type ImageType = {
-    id: string; // Yüklenen dosya için unique ID veya veritabanından gelen ID
-    file?: File; // Sadece yeni yüklenen dosyalar için
-    image_path: string; // Hem yeni hem de var olan görsellerin yolunu saklar
-    isNew: boolean; // Yeni eklenmiş mi yoksa önceden var olan mı
-    is_featured: boolean|false;
-};
-type FormDataType = {
-    category_ids: SelectOptionsType[];
-    tag_ids: SelectOptionsType[];
-    name: string;
-    slug: string;
-    brand_id: number|null;
-    short_description: string;
-    long_description: string;
-    sizes: SizeType[],
-    is_active: boolean;
-    price: number;
-    price_discount: number|null;
-    keywords: string;
-    seo_description: string;
-    author: string;
-    images: ImageType[];
-    existing_images: [];
-    featured_image: string;
-    gender?: string | null;
-    meta_title: string;
-    meta_description: string;
-    og_image_url: string;
-};
-type SizeType = {
-    size: string;
-    stock: number;
-    stock_alert: number;
+const TABS: Array<{ key: TabKey; label: string }> = [
+    { key: 'general', label: 'Genel' },
+    { key: 'price', label: 'Fiyat' },
+    { key: 'stock', label: 'Stok & Varyant' },
+    { key: 'media', label: 'Medya' },
+    { key: 'seo', label: 'SEO & Yayın' },
+];
+
+const buildDraftPayload = (form: ReturnType<typeof useProductForm>['form']): ProductDraftPayload => ({
+    name: form.name,
+    slug: form.slug,
+    product_type: form.product_type,
+    brand_id: form.brand_id,
+    gender: form.gender,
+    short_description: form.short_description,
+    long_description: form.long_description,
+    is_featured: form.is_featured,
+    tax_rate: form.tax_rate,
+    price_includes_tax: form.price_includes_tax,
+    mpn: form.mpn,
+    cost_price: form.cost_price,
+    video_url: form.video_url,
+    categories: form.categories,
+    tags: form.tags,
+    attributes: form.attributes,
+    keywords: form.keywords,
+    seo_description: form.seo_description,
+    meta_title: form.meta_title,
+    meta_description: form.meta_description,
+    og_image_url: form.og_image_url,
+    author: form.author,
+    publish_at: form.publish_at,
+    unpublish_at: form.unpublish_at,
+    status: form.status,
+});
+
+const buildUpdatePayload = (
+    form: ReturnType<typeof useProductForm>['form']
+): ProductUpdatePayload => {
+    const draft = buildDraftPayload(form);
+    return {
+        ...draft,
+        name: form.name,
+        slug: form.slug,
+        product_type: form.product_type,
+        tax_rate: form.tax_rate,
+        price_includes_tax: form.price_includes_tax,
+        categories: form.categories,
+        tags: form.tags,
+        attributes: form.attributes,
+        variants: form.variants.map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            barcode: v.barcode ?? null,
+            price: v.price,
+            price_discount:
+                v.price_discount === null || (v.price_discount as any) === ''
+                    ? null
+                    : v.price_discount,
+            cost_price: v.cost_price ?? null,
+            stock: v.stock,
+            stock_alert_threshold: v.stock_alert_threshold,
+            is_default: v.is_default,
+            sort_order: v.sort_order,
+            attribute_value_ids: v.attribute_value_ids,
+            featured_image_id: v.featured_image_id ?? null,
+        })),
+        images: form.images.map((i) => ({
+            id: typeof i.id === 'number' ? i.id : undefined,
+            is_featured: i.is_featured,
+            sort_order: i.sort_order,
+        })),
+    };
 };
 
-const initialFormState: FormDataType = {
-    category_ids: [],
-    tag_ids: [],
-    name: '',
-    slug: '',
-    brand_id: null,
-    short_description: '',
-    long_description: '',
-    sizes: [],
-    is_active: true,
-    price: 0,
-    price_discount: 0,
-    keywords: '',
-    seo_description: '',
-    author: '',
-    images: [],
-    existing_images: [],
-    featured_image: '',
-    gender: null,
-    meta_title: '',
-    meta_description: '',
-    og_image_url: '',
-};
-const customNoOptionsMessage = () => {
+// Inner form — context içinde çalışır
+interface InnerProps {
+    brands: Option[];
+    categories: Option[];
+    tags: Option[];
+    genders: StrOption[];
+}
+
+const ProductFormInner: React.FC<InnerProps> = ({ brands, categories, tags, genders }) => {
+    const {
+        form,
+        setForm,
+        errors,
+        setErrors,
+        dirty,
+        setDirty,
+        activeTab,
+        setActiveTab,
+        tabErrorCount,
+        isEdit,
+    } = useProductForm();
+    const navigate = useNavigate();
+    const can = useCan();
+
+    const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
+        'idle'
+    );
+    const [submitting, setSubmitting] = useState(false);
+
+    // beforeunload guard
+    useEffect(() => {
+        const handler = (e: BeforeUnloadEvent) => {
+            if (dirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, [dirty]);
+
+    // Autosave — sadece kayıtlı ürün için
+    const draftPayload = useMemo(() => buildDraftPayload(form), [form]);
+    useProductAutosave({
+        productId: form.productId,
+        enabled: !!form.productId && dirty,
+        payload: draftPayload,
+        onSuccess: () => {
+            setAutosaveStatus('saved');
+            setDirty(false);
+            window.setTimeout(() => setAutosaveStatus('idle'), 1500);
+        },
+        onError: () => {
+            setAutosaveStatus('error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Taslak kaydedilemedi',
+                timer: 5000,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+            });
+        },
+    });
+
+    const handleDraftSave = async () => {
+        setSubmitting(true);
+        setAutosaveStatus('saving');
+        try {
+            if (form.productId) {
+                await ProductService.updateDraft(form.productId, draftPayload);
+            } else {
+                const created = await ProductService.createDraft(draftPayload);
+                setForm((prev) => ({ ...prev, productId: created.id }));
+                navigate(`/urunler/${created.id}/duzenle`, { replace: true });
+            }
+            setDirty(false);
+            setAutosaveStatus('saved');
+            Swal.fire({
+                icon: 'success',
+                title: 'Taslak kaydedildi',
+                timer: 1500,
+                showConfirmButton: false,
+            });
+        } catch (err: any) {
+            if (err?.response?.status === 422 && err.response.data?.errors) {
+                const apiErrors = err.response.data.errors;
+                const isValidationFormat =
+                    apiErrors && typeof apiErrors === 'object' &&
+                    Object.values(apiErrors).every((v) => Array.isArray(v));
+
+                setAutosaveStatus('error');
+                if (isValidationFormat) {
+                    setErrors(apiErrors);
+                    const tab = firstErrorTab(apiErrors);
+                    if (tab) setActiveTab(tab);
+                    const count = Object.keys(apiErrors).length;
+                    const topErrors = Object.entries(apiErrors)
+                        .slice(0, 3)
+                        .map(
+                            ([key, msgs]) =>
+                                `• ${humanizeFieldKey(key)}: ${(msgs as string[])[0]}`
+                        )
+                        .join('\n');
+                    const moreText = count > 3 ? `\n\nVe ${count - 3} hata daha...` : '';
+                    Swal.fire({
+                        icon: 'error',
+                        title: `${count} alan hatalı`,
+                        html: `<div style="text-align:left;font-size:0.875rem;white-space:pre-line;">${topErrors}${moreText}</div>`,
+                        confirmButtonText: 'Tamam',
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'İşlem başarısız',
+                        text:
+                            (apiErrors.message as string) ||
+                            err?.response?.data?.message ||
+                            'Taslak kaydedilemedi',
+                    });
+                }
+            } else {
+                setAutosaveStatus('error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Hata',
+                    text: err?.response?.data?.message || 'Taslak kaydedilemedi',
+                });
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handlePublish = async () => {
+        if (!form.productId) {
+            // Önce taslak aç, sonra publish
+            await handleDraftSave();
+        }
+        setSubmitting(true);
+        try {
+            const payload = buildUpdatePayload(form);
+            const id = form.productId!;
+            // Publish endpoint hem updateDraft hem status=published yapar — tek çağrı yeterli.
+            await ProductService.publish(id, payload);
+            setDirty(false);
+            Swal.fire({
+                icon: 'success',
+                title: 'Yayınlandı!',
+                text: 'Ürün başarıyla yayına alındı.',
+            });
+            navigate(route('ProductList'));
+        } catch (err: any) {
+            if (err?.response?.status === 422 && err.response.data?.errors) {
+                const apiErrors = err.response.data.errors;
+                // Validation error formatı: {field: [msgs...]} — her value array olmalı.
+                const isValidationFormat =
+                    apiErrors && typeof apiErrors === 'object' &&
+                    Object.values(apiErrors).every((v) => Array.isArray(v));
+
+                if (isValidationFormat) {
+                    setErrors(apiErrors);
+                    const tab = firstErrorTab(apiErrors);
+                    if (tab) setActiveTab(tab);
+                    const count = Object.keys(apiErrors).length;
+                    const topErrors = Object.entries(apiErrors)
+                        .slice(0, 3)
+                        .map(
+                            ([key, msgs]) =>
+                                `• ${humanizeFieldKey(key)}: ${(msgs as string[])[0]}`
+                        )
+                        .join('\n');
+                    const moreText = count > 3 ? `\n\nVe ${count - 3} hata daha...` : '';
+                    Swal.fire({
+                        icon: 'error',
+                        title: `${count} alan hatalı`,
+                        html: `<div style="text-align:left;font-size:0.875rem;white-space:pre-line;">${topErrors}${moreText}</div>`,
+                        confirmButtonText: 'Tamam',
+                    });
+                } else {
+                    // Business logic / domain hatası (örn. InvalidStatusTransition) — flat obj.
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'İşlem başarısız',
+                        text:
+                            (apiErrors.message as string) ||
+                            err?.response?.data?.message ||
+                            'Yayınlama başarısız',
+                    });
+                }
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Hata',
+                    text: err?.response?.data?.message || 'Yayınlama başarısız',
+                });
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDuplicate = async () => {
+        if (!form.productId) return;
+        const confirm = await Swal.fire({
+            icon: 'question',
+            title: 'Ürünü kopyala?',
+            text: 'Tüm görsel, varyant ve attribute bilgileri yeni ürüne kopyalanacak.',
+            showCancelButton: true,
+            confirmButtonText: 'Kopyala',
+            cancelButtonText: 'Vazgeç',
+        });
+        if (!confirm.isConfirmed) return;
+        try {
+            const dup = await ProductService.duplicate(form.productId);
+            Swal.fire({ icon: 'success', title: 'Kopyalandı!', timer: 1500 });
+            navigate(`/urunler/${dup.id}/duzenle`);
+        } catch (err: any) {
+            Swal.fire({ icon: 'error', title: 'Hata', text: err?.message || 'Kopya başarısız' });
+        }
+    };
+
+    const canPublish = can('product.publish');
+    const canDuplicate = can('product.duplicate');
+    const canDraft = can('product.draft') || can('products.create') || can('products.update');
+
     return (
-        <div style={{ textAlign: 'center', color: 'gray' }}>
-            Aradığınız şeçenek bulunamadı.
+        <div className="panel">
+            {/* TabBar */}
+            <div className="flex items-center justify-between mb-5">
+                <h5 className="font-semibold text-lg dark:text-white-light">
+                    {isEdit ? 'Ürün Düzenle' : 'Yeni Ürün'}
+                </h5>
+                <div className="text-xs">
+                    {autosaveStatus === 'saving' && (
+                        <span className="text-gray-500">Kaydediliyor...</span>
+                    )}
+                    {autosaveStatus === 'saved' && (
+                        <span className="text-green-600">Kaydedildi</span>
+                    )}
+                    {autosaveStatus === 'error' && (
+                        <span className="text-red-500">Kaydedilemedi</span>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex gap-1 border-b mb-5 overflow-x-auto">
+                {TABS.map((tab) => {
+                    const errCount = tabErrorCount[tab.key];
+                    return (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`px-4 py-2 border-b-2 text-sm whitespace-nowrap transition-colors ${
+                                activeTab === tab.key
+                                    ? 'border-primary text-primary font-semibold'
+                                    : 'border-transparent text-gray-600 hover:text-primary'
+                            }`}
+                        >
+                            {tab.label}
+                            {errCount > 0 && (
+                                <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs bg-red-500 text-white rounded-full">
+                                    {errCount}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Active Panel */}
+            <div>
+                {activeTab === 'general' && (
+                    <GeneralTab
+                        brands={brands}
+                        categories={categories}
+                        tags={tags}
+                        genders={genders}
+                    />
+                )}
+                {activeTab === 'stock' && <StockVariantTab />}
+                {activeTab === 'price' && <PriceTab />}
+                {activeTab === 'media' && <MediaTab />}
+                {activeTab === 'seo' && <SeoPublishTab />}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t flex flex-wrap items-center justify-end gap-3">
+                {isEdit && canDuplicate && (
+                    <button
+                        type="button"
+                        className="btn btn-outline-info"
+                        onClick={handleDuplicate}
+                        disabled={submitting}
+                    >
+                        Kopyala
+                    </button>
+                )}
+                {canDraft && (
+                    <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={handleDraftSave}
+                        disabled={submitting}
+                    >
+                        Taslağı Kaydet
+                    </button>
+                )}
+                {canPublish && (
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={handlePublish}
+                        disabled={submitting}
+                    >
+                        {isEdit ? 'Güncelle & Yayınla' : 'Yayınla'}
+                    </button>
+                )}
+            </div>
         </div>
     );
 };
 
-const customMultiStyles = {
-    // Seçili değerlerin sarılmasına izin ver
-    valueContainer: (base: any) => ({
-        ...base,
-        flexWrap: 'wrap',
-        maxHeight: 'none',
-    }),
-    // Her bir tag kutucuğunu genişletebil
-    multiValue: (base: any) => ({
-        ...base,
-        margin: 2,
-        maxWidth: '100%',
-        whiteSpace: 'normal',
-    }),
-    // İç yazı normal akıp gitsin, ellipsis yok
-    multiValueLabel: (base: any) => ({
-        ...base,
-        whiteSpace: 'normal',
-        overflow: 'visible',
-        textOverflow: 'unset',
-    }),
-};
-const ProductAdd = () => {
+const ProductAdd: React.FC = () => {
+    const { id } = useParams<{ id: string }>();
     const dispatch = useDispatch();
-    const navigateToRoute = useRouteNavigator();
-
-    const { id } = useParams<{ id: string }>(); // id urlden alınır.
-
-    const [formData, setFormData] = useState<FormDataType>(initialFormState);
-    const [categories, setCategories] = useState([]); // Üst kategoriler
-    const [brands, setBrands] = useState<SelectOptionsType[]>([]); // Markalar
-    const [tagsOptions, setTagsOptions] = useState([]); // Etiket seçenekleri
-    const [genders, setGenders] = useState<GenderOption[]>([]);
-    const [errors, setErrors] = useState<Record<string, string[]>>({}); // Validation hataları için state
-    const [isEdit, setIsEdit] = useState(false);
-
-    const pageTitle = 'Ürün ' + (isEdit ? 'Güncelleme' : 'Ekleme');
+    const [brands, setBrands] = useState<Option[]>([]);
+    const [categories, setCategories] = useState<Option[]>([]);
+    const [tags, setTags] = useState<Option[]>([]);
+    // Backend App\Enums\Gender ile bire bir eşleşen değerler (Türkçe slug).
+    const [genders] = useState<StrOption[]>([
+        { value: 'kadin', label: 'Kadın' },
+        { value: 'erkek', label: 'Erkek' },
+        { value: 'unisex', label: 'Unisex' },
+        { value: 'kiz-cocuk', label: 'Kız Çocuk' },
+        { value: 'erkek-cocuk', label: 'Erkek Çocuk' },
+        { value: 'unisex-cocuk', label: 'Unisex Çocuk' },
+    ]);
+    const [initialForm, setInitialForm] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const isEdit = !!id;
 
     useEffect(() => {
-        dispatch(setPageTitle(pageTitle));
-    }, []);
+        dispatch(setPageTitle(isEdit ? 'Ürün Düzenleme' : 'Ürün Ekleme'));
+    }, [dispatch, isEdit]);
+
+    // İlgili referans verilerini paralel çek
     useEffect(() => {
-        const fetchCreateData = async () => {
+        const loadRefs = async () => {
             try {
-                if (!id) {
-                    const response = await ProductService.create();
-                    setTagsOptions(response.data.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name }))); // Etiketleri dönüştür
-                    setCategories(response.data.categories.map((category: Category) => ({
-                        value: category.id,
-                        label: category.name
-                    })));
-                    setBrands([{ label: "Marka seçiniz" } ,...response.data.brands.map((brand: Brand) => ({
-                        value: brand.id,
-                        label: brand.name
-                    }))]);
-                    setGenders([{ label: "Cinsiyet" } ,...response.data.genders]);
-                }
-            } catch (error) {
-                console.error('Veriler alınırken hata oluştu:', error);
+                const sort = { columnAccessor: 'name', direction: 'asc' as const };
+                const [b, c, t] = await Promise.all([
+                    (BrandService as any).list?.(1, 500, '', sort),
+                    (CategoryService as any).list?.(1, 500, '', sort, {}),
+                    (TagService as any).fetchTags?.(1, 500, '', sort),
+                ]);
+                const mapOpt = (arr: any[]): Option[] =>
+                    (arr ?? []).map((r) => ({ value: r.id, label: r.name }));
+                const extract = (resp: any) =>
+                    Array.isArray(resp?.data) ? resp.data : resp?.data?.data ?? [];
+                setBrands(mapOpt(extract(b)));
+                setCategories(mapOpt(extract(c)));
+                setTags(mapOpt(extract(t)));
+            } catch (err) {
+                console.error('Reference data load failed', err);
             }
         };
-
-        fetchCreateData();
+        loadRefs();
     }, []);
+
+    // Edit modu: mevcut ürünü yükle
     useEffect(() => {
-        if (id) {
-            setIsEdit(true);
-            ProductService.fetchById(id).then((response) => {
-                console.log("response");
-                console.log(response);
-                const lastPrice = response.product.prices && response.product.prices.length > 0
-                    ? response.product.prices[response.product.prices.length - 1]
-                    : { price: 0, price_discount: null };
-                setFormData((prev) => (
-                    {
-                        ...prev,
-                        ...response.product,
-                        price: lastPrice.price ?? 0,
-                        price_discount: lastPrice.price_discount ?? null,
-                        featured_image: response.product.images.find((image: ImageType) => image.is_featured)?.id || '', // Öne çıkan görselin ID'si
-                        images: response.product.images.map((image: ImageType) => ({
-                            id: image.id || '',
-                            image_path: 'http://kermes.test/storage/' + (image.image_path || ''),
-                            isNew: false
-                        })),
-                        tag_ids: response.product.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name || '' })),
-                        category_ids: response.product.categories.map((tag: Tag) => ({ value: tag.id, label: tag.name || '' })),
-                        name: response.product.name || '',
-                        slug: response.product.slug || '',
-                        short_description: response.product.short_description || '',
-                        long_description: response.product.long_description || '',
-                    }
-                ));
-                setTagsOptions(response.tags.map((tag: Tag) => ({ value: tag.id, label: tag.name }))); // Etiketleri dönüştür
-                setCategories(response.categories.map((category: Category) => ({
-                    value: category.id,
-                    label: category.name
-                }))); // Kategorileri dönüştür
-                setBrands([{ label: "Marka seçiniz" } ,...response.brands.map((brand: Brand) => ({
-                    value: brand.id,
-                    label: brand.name
-                }))]); // Markaları dönüştür
-                setGenders([{ label: "Cinsiyet" } ,...response.genders]);
-            }).catch((error) => {
-                console.log(error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Hata!',
-                    text: 'Ürün bilgisi alınamadı:' + error,
-                    confirmButtonText: 'Tamam',
-                    padding: '2em',
-                    customClass: {
-                        popup: 'sweet-alerts'
-                    }
-                });
-            });
-        } else {
-            setIsEdit(false);
-        }
-    }, [id]);
-    useEffect(() => {
-        setFormData((prev) => ({
-            ...prev,
-            slug: SlugHelper.generate(formData.name ?? '')
-        }));
-    }, [formData.name]);
-    useEffect(() => {
-        return () => {
-            // Cleanup fonksiyonu
-            formData.images.forEach(image => {
-                URL.revokeObjectURL(image.image_path);
-            });
-        };
-    }, [formData.images]);
-
-
-    const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    // Dropzone için ayar
-    const onDrop = (acceptedFiles: File[], rejectedFiles: FileRejection[], event: DropEvent) => {
-        const newImages: ImageType[] = acceptedFiles.map((file: File) => ({
-            id: generateUniqueId(), // Benzersiz ID (isteğe bağlı değiştirilebilir)
-            file,
-            image_path: URL.createObjectURL(file), // Görsel önizlemesi
-            isNew: true,
-            is_featured: false
-        }));
-        setFormData(prev => {
-            // Eğer hiç görsel yoksa ve yeni görseller eklendiyse
-            const shouldSetFeatured = prev.images.length === 0 && newImages.length > 0;
-            console.log(newImages);
-            return {
-                ...prev,
-                images: [...prev.images, ...newImages],
-                featured_image: shouldSetFeatured ? newImages[0].id : prev.featured_image
-            };
-        });
-    };
-    // `accept` türü için doğru nesne yapısı
-    const acceptDropZone: Accept = {
-        'image/*': [] // Sadece görseller
-    };
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-
-    const { getRootProps, getInputProps } = useDropzone({
-        onDrop,
-        accept: acceptDropZone,
-        multiple: true, // Çoklu dosya yükleme
-        maxFiles: 10,
-        maxSize: MAX_FILE_SIZE,
-        onDropRejected: (rejectedFiles) => {
-            const errors = rejectedFiles.map(({ file, errors }) => {
-                if (errors[0]?.code === 'file-too-large') {
-                    return `${escapeHtml(file.name)}: Dosya boyutu 2MB'dan büyük olamaz`;
-                }
-                if (errors[0]?.code === 'file-invalid-type') {
-                    return `${escapeHtml(file.name)}: Sadece resim dosyaları kabul edilmektedir`;
-                }
-                return `${escapeHtml(file.name)}: Dosya kabul edilemedi`;
-            });
-
-            Swal.fire({
-                icon: 'error',
-                title: 'Hata!',
-                html: errors.join('<br>'),
-                confirmButtonText: 'Tamam'
-            });
-        }
-    });
-
-    // Öne çıkan görsel seçimi
-    const handleSetFeatured = (id: string) => {
-        setFormData(prev => ({
-            ...prev,
-            featured_image: id
-        }));
-    };
-    // Görseli silme
-    const handleRemoveImage = (id: string) => {
-        // Silinecek görselin URL'ini temizle
-        const imageToRemove = formData.images.find(img => img.id === id);
-        if (imageToRemove) {
-            URL.revokeObjectURL(imageToRemove.image_path);
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((image) => image.id !== id),
-            featured_image: prev.featured_image === id ? '' : prev.featured_image
-        }));
-    };
-    const freshFormData = () => {
-        setFormData(initialFormState);
-        setErrors({});
-    };
-    const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const sanitizedSlug = SlugHelper.generate(e.target.value); // Girilen değeri anında sluglaştır
-        setFormData((prev) => ({ ...prev, slug: sanitizedSlug }));
-
-        if (errors[e.target.name]) {
-            // errors un içinde name varsa bunu errorsa ekleyecek
-            setErrors((prev) => ({ ...prev, [e.target.name]: [] }));
-        }
-    };
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        let { name, value } = e.target;
-        if ((name === 'price' || name === 'stock' || name === 'price_discount') && value.startsWith("0")){
-                value = value.slice(1);
-        }
-        setFormData(prev => ({
-            ...prev,
-            [name]: value === null ? '' : value
-        }));
-        if (errors[name]) {
-            // errors un içinde name varsa bunu errorsda ekleyecek
-            setErrors((prev) => ({
-                    ...prev,
-                    [name]: []
-                })
-            );
-        }
-    };
-    const handleSelectChange = (selectedOptions: MultiValue<SelectOptionsType>, actionMeta: ActionMeta<SelectOptionsType>) => {
-
-        if (!actionMeta.name) return;
-
-        const fieldName = actionMeta.name as keyof typeof formData; // `name`'i kesin string olarak belirtiyoruz
-
-        setFormData((prevData) => ({
-            ...prevData,
-            [fieldName]: selectedOptions
-        }));
-    };
-
-    const handleAddSize = () => {
-        setFormData(prev => ({
-            ...prev,
-            sizes: [...prev.sizes, { size: '', stock: 0, stock_alert: 0 }]
-        }));
-    };
-    const handleRemoveSize = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            sizes: prev.sizes.filter((_, i) => i !== index)
-        }));
-    };
-    const handleSizeChange = (index: number, field: keyof SizeType, value: string | number) => {
-        setFormData(prev => {
-            const newSizes = [...prev.sizes];
-            newSizes[index] = {
-                ...newSizes[index], [field]: field === 'size' ? (value as string) : parseInt(value as string, 10),
-            };
-            return { ...prev, sizes: newSizes };
-        });
-    };
-
-    const validateForm = (): Record<string, string[]> => {
-        const errors: Record<string, string[]> = {};
-
-        // Ürün adı kontrolü
-        if (!formData.name.trim()) {
-            errors.name = ['Ürün adı zorunludur'];
-        }
-
-        // Slug kontrolü
-        if (!formData.slug.trim()) {
-            errors.slug = ['Slug alanı zorunludur'];
-        }
-
-        // Kategori kontrolü
-        if (formData.category_ids.length === 0) {
-            errors.category_ids = ['En az bir kategori seçilmelidir'];
-        }
-
-        formData.sizes.forEach((s, i) => {
-            if (!s.size.trim()) {
-                errors[`sizes.${i}.size`] = ['Beden adı zorunludur'];
-            }
-            if (s.stock < 0) {
-                errors[`sizes.${i}.stock`] = ['Stok değeri 0 veya daha büyük olmalıdır'];
-            }
-            if (s.stock_alert < 0) {
-                errors[`sizes.${i}.stock_alert`] = ['Uyarı eşiği 0 veya daha büyük olmalıdır'];
-            }
-        });
-
-        // En az bir beden girilmeli
-        if (formData.sizes.length === 0) {
-            errors.sizes = ['En az bir beden eklemelisiniz'];
-        }
-
-        // Fiyat kontrolü
-        if (formData.price <= 0) {
-            errors.price = ['Fiyat 0\'dan büyük olmalıdır'];
-        }
-
-        // Görsel kontrolü
-        if (formData.images.length === 0) {
-            errors.images = ['En az bir görsel yüklemelisiniz'];
-        }
-
-        return errors;
-    };
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        const validationErrors = validateForm();
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-
-            const errorMessages = Object.entries(validationErrors)
-                .map(([field, messages]) => `${messages[0]}`)
-                .join('\n');
-
-            // Önce SweetAlert'i göster
-            await Swal.fire({
-                icon: 'error',
-                title: 'Lütfen aşağıdaki hataları düzeltiniz:',
-                text: errorMessages,
-                confirmButtonText: 'Tamam'
-            });
-
-            // SweetAlert kapandıktan 500ms sonra scroll yap
-            setTimeout(() => {
-                const firstErrorField = Object.keys(validationErrors)[0];
-                const errorElement = firstErrorField === 'images'
-                    ? document.getElementById('images')
-                    : document.querySelector(`[name="${firstErrorField}"]`);
-
-                if (errorElement) {
-                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 200);
-
+        if (!id) {
+            setLoading(false);
             return;
         }
-
-        setErrors({}); //Yeni istekten önce hataları temizle
-
-        const serviceData = {
-            ...formData,
-            category_ids: formData.category_ids.map(cat => cat.value),
-            tag_ids: formData.tag_ids.map(tag => tag.value),
-            images: formData.images.filter((img: ImageType): img is ImageType & {file: File} => img.isNew && img.file !== undefined).map((img) => img), // Yeni yüklenen dosyalar
-            existing_images: formData.images.filter((img) => !img.isNew).map((img) => img.id), // Var olan görseller
-            sizes: formData.sizes.map(s => ({
-                size:        s.size,
-                stock:       s.stock,
-                stock_alert: s.stock_alert,
-            })),
-        };
-
-        try {
-            if (id) {
-                const response = await ProductService.update(id, serviceData);
+        ProductService.fetchById(id)
+            .then((product) => {
+                setInitialForm(mapResourceToForm(product));
+            })
+            .catch((err) => {
+                console.error(err);
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Başarılı!',
-                    text: `Ürün başarıyla güncellendi! ID: ${response.data.id}`,
-                    confirmButtonText: 'Tamam',
-                    padding: '2em',
-                    customClass: {
-                        popup: 'sweet-alerts',
-                        htmlContainer: '!text-info'
-                    }
+                    icon: 'error',
+                    title: 'Hata',
+                    text: 'Ürün yüklenemedi',
                 });
-            } else {
+            })
+            .finally(() => setLoading(false));
+    }, [id]);
 
-                const response = await ProductService.add(serviceData);
-                freshFormData();
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Başarılı!',
-                    text: `Ürün başarıyla oluşturuldu!`,
-                    confirmButtonText: 'Tamam',
-                    padding: '2em',
-                    customClass: {
-                        popup: 'sweet-alerts'
-                    }
-                });
-                navigateToRoute('ProductList');
-            }
-        } catch (error: any) {
-            if (error.response?.status === 422) {
-                // Laravel'den gelen validation hatalarını state'e kaydet
-                setErrors(error.response.data.errors);
-            } else {
-                console.error(error);
-                alert(error.response?.data?.message || 'Bir hata oluştu! Lütfen tekrar deneyin.');
-            }
-
-        }
-    };
+    if (loading) {
+        return (
+            <div className="panel">
+                <p>Yükleniyor...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="">
-            <div className="panel">
-                <div className="flex items-center justify-between mb-5">
-                    <h5 className="font-semibold text-lg dark:text-white-light">
-                        {pageTitle}
-                    </h5>
-                </div>
-                <form className="grid xl:grid-cols-2 gap-6 grid-cols-1" onSubmit={handleSubmit}>
-                    <div className="mb-5">
-                        <input type="text" placeholder="Ürün Adı *" className="form-input"
-                               name="name"
-                               value={formData.name || ''}
-                               onChange={handleInputChange}
-                        />
-                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name[0]}</p>}
-                    </div>
-                    <div className="mb-5">
-                        <input type="text" placeholder="Ürün Slug Adı" className="form-input"
-                               name="slug"
-                               value={formData.slug || ''}
-                               onChange={handleSlugChange}
-                        />
-                        {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug[0]}</p>}
-                        <span className="badge bg-info block text-xs hover:top-0">
-                            Ürünün detay sayfasına gidildiğinde URL'de görünmesini istediğiniz isim.
-                        </span>
-                        <span className="badge bg-danger block text-xs hover:top-0">
-                        Otomatik olarak oluşturulacaktır. İsterseniz müdahale edebilirsiniz.
-                        </span>
-                    </div>
-                    <div className="mb-5">
-                        <Select
-                            value={brands.find(brand => brand.value === formData.brand_id) || null}
-                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
-                            options={brands}
-                            className="basic-single-select"
-                            placeholder="Ürün Marka"
-                            classNamePrefix="select"
-                            name="brand_id"
-                            onChange={(newValue: SingleValue<SelectOptionsType> | MultiValue<SelectOptionsType>, actionMeta: ActionMeta<SelectOptionsType>) => {
-                                if (newValue && !Array.isArray(newValue)) { // Eğer newValue bir dizi değilse ve null değilse
-                                    const singleValue = newValue as SingleValue<SelectOptionsType>; // Türü kesinleştir
-                                    if (singleValue) { // singleValue'nun null olmadığını kontrol et
-                                        setFormData((prevData) => ({
-                                            ...prevData,
-                                            brand_id: singleValue.value // Seçili markanın ID'sini ayarla
-                                        }));
-                                    }
-                                } else {
-                                    setFormData((prevData) => ({
-                                        ...prevData,
-                                        brand_id: null // Seçim temizlendiğinde
-                                    }));
-                                }
-                            }}
-
-                        />
-                        {errors.category_ids && <p className="text-red-500 text-xs mt-1">{errors.category_ids[0]}</p>}
-                    </div>
-                    <div className="mb-5">
-                        <Select
-                            value={formData.category_ids}
-                            isMulti
-                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
-                            options={categories}
-                            className="basic-multi-select"
-                            placeholder="Ürün Kategori"
-                            classNamePrefix="select"
-                            name="category_ids"
-                            onChange={handleSelectChange}
-                        />
-                        {errors.category_ids && <p className="text-red-500 text-xs mt-1">{errors.category_ids[0]}</p>}
-                    </div>
-                    <div className="mb-5">
-                        <Select
-                            value={formData.tag_ids}
-                            styles={customMultiStyles}
-                            isMulti
-                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
-                            options={tagsOptions}
-                            className="basic-multi-select"
-                            placeholder="Ürün Etiketi"
-                            classNamePrefix="select"
-                            name="tag_ids"
-                            onChange={handleSelectChange} // Direkt olarak fonksiyonu verdik
-                        />
-                        {errors.tag_ids && <p className="text-red-500 text-xs mt-1">{errors.tag_ids[0]}</p>}
-                    </div>
-                    <div className="mb-5">
-                        <Select
-                            <GenderOption, false>
-                            value={genders.find(gender => gender.value === formData.gender) || null}
-                            components={{ ...makeAnimated(), NoOptionsMessage: customNoOptionsMessage }}
-                            options={genders}
-                            className="basic-single-select"
-                            placeholder="Cinsiyet"
-                            classNamePrefix="select"
-                            name="gender"
-                            onChange={(opt, _action) =>
-                                        setFormData(prev => ({
-                                                ...prev,
-                                            gender: opt?.value ?? null
-                                        }))
-                                    }
-
-                        />
-                        {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender[0]}</p>}
-                    </div>
-
-
-
-
-                    <div className="mb-5">
-                        <h5 className="font-semibold text-lg dark:text-white-light mb-4">Kısa Açıklama</h5>
-                        <JoditEditorComponent
-                            value={formData.short_description || ''}
-                            onChange={(value) =>
-                                setFormData((prev) => ({ ...prev, short_description: value }))
-                            }
-                        />
-
-                        {errors.short_description &&
-                            <p className="text-red-500 text-xs mt-1">{errors.short_description[0]}</p>}
-                    </div>
-                    <div className="mb-5">
-                        <h5 className="font-semibold text-lg dark:text-white-light mb-4">Uzun Açıklama</h5>
-                        <JoditEditorComponent
-                            value={formData.long_description || ''}
-                            onChange={(value) =>
-                                setFormData((prev) => ({ ...prev, long_description: value }))
-                            }
-                        />
-                        {errors.long_description &&
-                            <p className="text-red-500 text-xs mt-1">{errors.long_description[0]}</p>}
-                    </div>
-
-                    {/*<div className="mb-5"></div>*/}
-                    <div className="">
-                        <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" className="form-checkbox text-info"
-                                   name="is_active"
-                                   checked={formData.is_active}
-                                   onChange={(e) =>
-                                       setFormData({ ...formData, is_active: e.target.checked })
-                                   }
-                            />
-                            <span className=" text-white-dark">Aktif</span>
-                        </label>
-                    </div>
-
-                    <div className="col-span-2">
-                        <hr className="mb-5 border-info" />
-                        <div className="flex items-center justify-between mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">
-                                Ürün Stok Bilgileri
-                            </h5>
-                        </div>
-                        {/* Ürün Stok Bilgileri */}
-                        <div className="mb-4">
-                            {formData.sizes.map((s, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4 w-full${s.stock <= s.stock_alert ? ' bg-red-50 border border-red-300 rounded-lg p-2' : ''}`}
-                                >
-                                    {/* Beden */}
-                                    <div className="flex flex-col">
-                                        <label className="block text-sm font-medium mb-1">Beden</label>
-                                        <Input
-                                            className="w-full"
-                                            value={s.size}
-                                            onChange={e => handleSizeChange(idx, 'size', e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Stok */}
-                                    <div className="flex flex-col">
-                                        <label className="block text-sm font-medium mb-1">
-                                            Stok
-                                            {s.stock <= s.stock_alert && (
-                                                <span className="ml-2 text-xs font-semibold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">
-                                                    ⚠ Kritik Stok
-                                                </span>
-                                            )}
-                                        </label>
-                                        <Input
-                                            className="w-full"
-                                            type="number"
-                                            value={s.stock}
-                                            onChange={e => handleSizeChange(idx, 'stock', e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Uyarı Eşiği */}
-                                    <div className="flex flex-col">
-                                        <label className="block text-sm font-medium mb-1">Uyarı Eşiği</label>
-                                        <Input
-                                            className="w-full"
-                                            type="number"
-                                            value={s.stock_alert}
-                                            onChange={e => handleSizeChange(idx, 'stock_alert', e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Sil Butonu */}
-                                    <div className="flex justify-end">
-                                        <button
-                                            type="button"
-                                            className="btn btn-danger w-full hover:btn-primary"
-                                            onClick={() => handleRemoveSize(idx)}
-                                        >
-                                            <IconMinusCircle className="h-4 w-4 me-2"  /> <span>Sil</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* Satır Ekleme Butonu */}
-                            <button
-                                type="button"
-                                onClick={handleAddSize}
-                                className="mt-2 btn btn-success hover:btn-primary"
-                            >
-                                <IconPlusCircle className="h-4 w-4 me-2" /><span>Ekle</span>
-                            </button>
-                        </div>
-                    </div>
-
-
-
-                    <div className="col-span-2">
-                        <hr className="mb-5 border-info" />
-                        <div className="flex items-center justify-between mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">
-                                Ürün Fiyat Bilgileri
-                            </h5>
-                        </div>
-                    </div>
-                    <div className="mb-5">
-                        <label htmlFor="price">Ana Fiyat</label>
-                        <input type="number" placeholder="Ürün Fiyat" className="form-input"
-                               name="price"
-                               min="0" // Negatif değerleri engellemek için
-                               step="0.01" // Ondalık basamaklara izin vermek için
-                               value={formData.price}
-                               onChange={handleInputChange}
-                        />
-                        {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price[0]}</p>}
-                    </div>
-                    <div className="mb-5">
-                        <label htmlFor="price_discount">İndirimli Son Fiyat</label>
-                        <input type="number" placeholder="Ürün İndirimli Fiyat" className="form-input"
-                               name="price_discount"
-                               id="price_discount"
-                               min="0"
-                               step="0.01"
-                               value={formData.price_discount == null ? 0 : formData.price_discount}
-                               onChange={handleInputChange}
-                        />
-                        {errors.price_discount &&
-                            <p className="text-red-500 text-xs mt-1">{errors.price_discount[0]}</p>}
-                        <span className="badge bg-info block text-xs hover:top-0">
-                            Ürünün güncel fiyatı, indirimli fiyat olarak girilen fiyat olacaktır.
-                            İndirim tanımlama ekranından yapacağınız indirim tanımlama işlemin sonrasında hesaplanacak fiyat bu alandaki indirimli fiyat üzerinden hesaplanacaktır.
-                        </span>
-                    </div>
-
-                    <div className="col-span-2">
-                        <hr className="mb-5 border-info" />
-                        <div className="flex items-center justify-between mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">
-                                Ürün Görselleri
-                            </h5>
-                        </div>
-                    </div>
-
-                    <div {...getRootProps()}
-                         className="col-span-2 border-dashed border-2 border-gray-400 p-4 rounded-md cursor-pointer">
-                        <input {...getInputProps()} />
-                        <p>Görselleri buraya sürükleyin veya seçmek için tıklayın</p>
-                        <div className="grid grid-cols-3 gap-4 mt-4">
-
-                            {formData.images.length === 0 && (
-                                <div className="col-span-3 text-center text-gray-500 py-4">
-                                    Henüz resim yüklenmedi
-                                </div>
-                            )}
-
-                            {formData.images.map((image) => (
-                                <div key={image.id} className="relative group">
-                                    <img
-                                        src={image.image_path}
-                                        alt="image_path"
-                                        className="w-full h-32 object-contain rounded-md transition-transform group-hover:scale-105"
-                                    />
-                                    {/* Öne Çıkan İşareti */}
-                                    {formData.featured_image === image.id && (
-                                        <span
-                                            className="absolute top-0 left-0 bg-green-500 text-white text-xs px-2 py-1 rounded-br-md">
-                                            Öne Çıkan
-                                        </span>
-                                    )}
-                                    <div
-                                        className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
-
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleSetFeatured(image.id);
-                                            }}
-                                            className="absolute bottom-0 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-tr-md">
-                                            Öne Çıkar
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRemoveImage(image.id);
-                                            }}
-                                            className="absolute bottom-0 right-0 bg-red-500 text-white text-xs px-2 py-1 rounded-tl-md"
-                                        >
-                                            Sil
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-
-                    <div className="col-span-2">
-                        <hr className="mb-5 border-info" />
-
-                        <div className="flex items-center justify-between mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">
-                                Kategori SEO Bilgileri
-                            </h5>
-                        </div>
-                        <div className="grid xl:grid-cols-3 gap-6 grid-cols-1">
-                            <div className="mb-5">
-                                <input type="text" placeholder="Anahtar Kelimeler" className="form-input"
-                                       name="keywords"
-                                       value={formData.keywords || ''}
-                                       onChange={handleInputChange}
-                                />
-                                {errors.keywords && <p className="text-red-500 text-xs mt-1">{errors.keywords[0]}</p>}
-                            </div>
-                            <div className="mb-5">
-                                <input type="text" placeholder="Kategori Hakkında Seo Açıklaması"
-                                       className="form-input"
-                                       name="seo_description"
-                                       value={formData.seo_description || ''}
-                                       onChange={handleInputChange}
-                                />
-                                {errors.seo_description &&
-                                    <p className="text-red-500 text-xs mt-1">{errors.seo_description[0]}</p>}
-                            </div>
-                            <div className="mb-5">
-                                <input type="text" placeholder="Yazar Bilgisi" className="form-input"
-                                       name="author"
-                                       value={formData.author || ''}
-                                       onChange={handleInputChange}
-                                />
-                                {errors.author && <p className="text-red-500 text-xs mt-1">{errors.author[0]}</p>}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Meta SEO alanları */}
-                    <div className="col-span-2">
-                        <hr className="mb-5 border-info" />
-                        <div className="flex items-center justify-between mb-5">
-                            <h5 className="font-semibold text-lg dark:text-white-light">
-                                Meta SEO (Google / Sosyal Medya)
-                            </h5>
-                        </div>
-                        <div className="grid xl:grid-cols-2 gap-6 grid-cols-1">
-                            <div className="mb-5">
-                                <label className="block text-sm font-medium mb-1">
-                                    Meta Başlık
-                                    <span className={`ml-2 text-xs ${(formData.meta_title?.length || 0) > 160 ? 'text-red-500' : 'text-gray-400'}`}>
-                                        {formData.meta_title?.length || 0}/160
-                                    </span>
-                                </label>
-                                <input type="text" placeholder={`${formData.name || 'Ürün Adı'} | Kermes`}
-                                       className="form-input"
-                                       name="meta_title"
-                                       maxLength={160}
-                                       value={formData.meta_title || ''}
-                                       onChange={handleInputChange}
-                                />
-                                {errors.meta_title && <p className="text-red-500 text-xs mt-1">{errors.meta_title[0]}</p>}
-                            </div>
-                            <div className="mb-5">
-                                <label className="block text-sm font-medium mb-1">
-                                    Meta Açıklama
-                                    <span className={`ml-2 text-xs ${(formData.meta_description?.length || 0) > 320 ? 'text-red-500' : 'text-gray-400'}`}>
-                                        {formData.meta_description?.length || 0}/320
-                                    </span>
-                                </label>
-                                <textarea placeholder="Ürün açıklaması (boş bırakılırsa kısa açıklama kullanılır)"
-                                          className="form-textarea"
-                                          name="meta_description"
-                                          maxLength={320}
-                                          rows={3}
-                                          value={formData.meta_description || ''}
-                                          onChange={(e) => handleInputChange(e as any)}
-                                />
-                                {errors.meta_description && <p className="text-red-500 text-xs mt-1">{errors.meta_description[0]}</p>}
-                            </div>
-                            <div className="mb-5">
-                                <label className="block text-sm font-medium mb-1">OG Görsel URL</label>
-                                <input type="url" placeholder="https://..."
-                                       className="form-input"
-                                       name="og_image_url"
-                                       value={formData.og_image_url || ''}
-                                       onChange={handleInputChange}
-                                />
-                                {errors.og_image_url && <p className="text-red-500 text-xs mt-1">{errors.og_image_url[0]}</p>}
-                            </div>
-                        </div>
-                        {/* Google Önizleme */}
-                        <div className="mt-2 p-4 border border-gray-200 rounded-lg bg-white dark:bg-gray-800">
-                            <p className="text-xs text-gray-400 mb-2">Google Önizleme</p>
-                            <p className="text-blue-700 text-base font-medium truncate">
-                                {formData.meta_title || (formData.name ? `${formData.name} | Kermes` : 'Ürün Adı | Kermes')}
-                            </p>
-                            <p className="text-green-700 text-xs mb-1">kermes.com › urun › {formData.slug || 'urun-slug'}</p>
-                            <p className="text-gray-600 text-sm line-clamp-2">
-                                {formData.meta_description || formData.short_description?.replace(/<[^>]+>/g, '') || 'Meta açıklama girilmemiş.'}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="col-span-2">
-                        <hr className="my-5 border-gray-300" />
-                        <div className="flex justify-center">
-                            <button type="submit" className="btn btn-info hover:btn-success w-full">
-                                {isEdit ? 'GÜNCELLE' : 'KAYDET'}
-                            </button>
-                        </div>
-
-                    </div>
-                </form>
-
-            </div>
-        </div>
+        <ProductFormProvider initial={initialForm ?? undefined} isEdit={isEdit}>
+            <ProductFormInner
+                brands={brands}
+                categories={categories}
+                tags={tags}
+                genders={genders}
+            />
+        </ProductFormProvider>
     );
 };
 

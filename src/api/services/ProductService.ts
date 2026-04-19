@@ -1,205 +1,172 @@
 import api from '../api';
+import type {
+    ProductAdminResource,
+    ProductDraftPayload,
+    ProductUpdatePayload,
+    BulkPriceUpdatePayload,
+    DeleteInfoResponse,
+    SlugCheckResponse,
+    VariantInputPayload,
+} from '../../types/product';
 
-type ImageType = {
-    id: string; // Yüklenen dosya için unique ID veya veritabanından gelen ID
-    file?: File; // Sadece yeni yüklenen dosyalar için
-    image_path: string; // Hem yeni hem de var olan görsellerin yolunu saklar
-    isNew: boolean; // Yeni eklenmiş mi yoksa önceden var olan mı
-};
-export interface SizeData {
-    size: string;
-    stock: number;
-    stock_alert: number;
-}
-
-type AddDataType = {
-    category_ids: number[];
-    tag_ids: number[];
-    slug: string;
-    name: string;
-    short_description: string;
-    long_description: string;
-    sizes: SizeData[],
-    is_active: boolean;
-    keywords: string;
-    seo_description: string;
-    author: string,
-    images: ImageType[];
-    existing_images: string[];
-    featured_image: string;
-    gender?: string | null;
-};
+// Sprint 32.2 — variant-first product service
+// Eski endpoint'ler (change-status, price-history, admin/product/create) kaldırıldı.
 
 export const ProductService = {
-    fetchById: async (id: string) => {
-        try {
-            const response = await api.get(`admin/product/${id}`);
-            if (response.data.hasOwnProperty('data')) {
-                return response.data.data;
-            }
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching tag by id:', error);
-            throw error;
-        }
+    // --- LIST / DETAIL ---
+    list: async (
+        page = 1,
+        limit = 10,
+        sortStatus: { columnAccessor: string; direction: string } = {
+            columnAccessor: 'id',
+            direction: 'asc',
+        },
+        filterData: Record<string, any> = {}
+    ) => {
+        const response = await api.get('admin/products', {
+            params: {
+                page,
+                limit,
+                sort_by: sortStatus.columnAccessor,
+                sort_order: sortStatus.direction,
+                ...filterData,
+            },
+        });
+        return response.data;
     },
-    list: async (page = 1, limit = 10, sortStatus = { columnAccessor: 'id', direction: 'asc' }, filterData:Record<string, any>) => {
-        console.log(JSON.stringify(filterData));
-        console.log(filterData);
-        try {
-            const response = await api.get(`admin/product`, {
-                params: {
-                    page,
-                    limit,
-                    sort_by: sortStatus.columnAccessor,
-                    sort_order: sortStatus.direction,
-                    filter: filterData
-                }
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching tag list:', error);
-            throw error;
-        }
+
+    fetchById: async (id: string | number): Promise<ProductAdminResource> => {
+        const response = await api.get(`admin/products/${id}`);
+        return response.data?.data ?? response.data;
     },
-    create: async () => {
-        try {
-            const response = await api.get('/admin/product/create');
-            return response.data;
-        } catch (error) {
-            console.error('Error fetch create data:', error);
-            throw error;
-        }
+
+    // --- DRAFT LIFECYCLE ---
+    createDraft: async (data: ProductDraftPayload): Promise<ProductAdminResource> => {
+        const response = await api.post('admin/products/draft', data);
+        return response.data?.data ?? response.data;
     },
-    getFiltersData: async () => {
-        try {
-            const response = await api.get('/admin/product/filters-data');
-            return response.data;
-        } catch (error) {
-            console.error('Error fetch create data:', error);
-            throw error;
-        }
+
+    updateDraft: async (
+        id: number | string,
+        data: Partial<ProductDraftPayload>
+    ): Promise<ProductAdminResource> => {
+        const response = await api.patch(`admin/products/${id}/draft`, data);
+        return response.data?.data ?? response.data;
     },
-    add: async (data: AddDataType) => {
-        try {
-            const formData = new FormData();
 
-            // Normal form verilerini ekle
-            (Object.keys(data) as Array<keyof AddDataType>).forEach(key => {
-                if (key !== 'images') {
-                    const value = data[key];
-                    if (key === 'category_ids' || key === 'tag_ids' || key === 'sizes') {
-                        formData.append(key, JSON.stringify(value));
-                    } else {
-                        formData.append(key, String(value));
-                    }
-                }
-            });
-
-            // Görselleri ekle
-            if (data.images?.length) {
-                data.images.forEach((image) => {
-                    if (image.file !== undefined){
-                        formData.append('images[]', image.file);
-                        formData.append('image_ids[]', image.id);
-                    }
-                });
-            }
-            const response = await api.post(`admin/product`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching tag add:', error);
-            throw error;
-        }
+    update: async (
+        id: number | string,
+        data: ProductUpdatePayload
+    ): Promise<ProductAdminResource> => {
+        const response = await api.put(`admin/products/${id}`, data);
+        return response.data?.data ?? response.data;
     },
-    update: async (id: string, data: AddDataType) => {
-        try {
-            const formData = new FormData();
-            let imageIds:string[] = [];
-            formData.append('_method', 'put'); // PUT veya PATCH olduğunda eklenmeli
 
-            // Normal form verilerini ekle
-            (Object.keys(data) as Array<keyof AddDataType>).forEach(key => {
-                if (key !== 'images') {
-                    const value = data[key];
-                    if (value !== null && value !== undefined){
-                        if (key === 'category_ids' || key === 'tag_ids' || key === 'existing_images' || key === 'sizes') {
-                            formData.append(key, JSON.stringify(value));
-                        } else {
-                            formData.append(key, String(value));
-                        }
-                    }
-
-                }
-            });
-            console.log(data);
-            console.log(data.images);
-            // Görselleri ekle
-            if (data.images?.length) {
-                // Yeni yüklenen görseller için
-                const newImages = data.images.filter(img => img.isNew && img.file);
-                newImages.forEach((image) => {
-                    formData.append('images[]', image.file as File);
-                    // formData.append('image_ids[]', image.id);
-                    imageIds.push(image.id);
-                });
-            }
-
-            if (data.existing_images?.length) {
-                const existingImages = data.existing_images;
-                existingImages.forEach((id) => {
-                    // formData.append('image_ids[]', id);
-                    imageIds.push(id.toString());
-                });
-            }
-            formData.append('image_ids', JSON.stringify(imageIds));
-
-
-
-            const response = await api.post(`admin/product/${id}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error tag update:', error);
-            throw error;
-        }
+    publish: async (
+        id: number | string,
+        data: ProductUpdatePayload
+    ): Promise<ProductAdminResource> => {
+        // Backend PublishProductRequest full validation ister; publish tek adımda
+        // güncel payload'u kaydeder ve status=published'a geçirir.
+        const response = await api.post(`admin/products/${id}/publish`, data);
+        return response.data?.data ?? response.data;
     },
-    delete: async (id: number) => {
-        try {
-            const response = await api.delete(`admin/product/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error('ProductService delete Error:', error);
-            throw error;
-        }
+
+    duplicate: async (id: number | string): Promise<ProductAdminResource> => {
+        const response = await api.post(`admin/products/${id}/duplicate`);
+        return response.data?.data ?? response.data;
     },
-    changeStatus: async (id: number) => {
-        try {
-            const response = await api.put(`admin/product/${id}/change-status`);
-            return response.data;
-        } catch (error) {
-            console.error('Error changing product status:', error);
-            throw error;
-        }
+
+    // --- IMAGE UPLOAD / META / DELETE ---
+    uploadImages: async (
+        productId: number | string,
+        files: File[],
+        variantId: number | null = null
+    ): Promise<any[]> => {
+        const fd = new FormData();
+        files.forEach((f) => fd.append('files[]', f));
+        if (variantId) fd.append('variant_id', String(variantId));
+        const response = await api.post(
+            `admin/products/${productId}/images`,
+            fd,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        return response.data?.data?.data ?? response.data?.data ?? response.data;
     },
+
+    updateImage: async (
+        productId: number | string,
+        imageId: number,
+        data: { is_featured?: boolean; sort_order?: number; variant_id?: number | null }
+    ): Promise<any> => {
+        const response = await api.patch(
+            `admin/products/${productId}/images/${imageId}`,
+            data
+        );
+        return response.data?.data ?? response.data;
+    },
+
+    deleteImage: async (
+        productId: number | string,
+        imageId: number
+    ): Promise<void> => {
+        await api.delete(`admin/products/${productId}/images/${imageId}`);
+    },
+
+    delete: async (id: number | string) => {
+        const response = await api.delete(`admin/products/${id}`);
+        return response.data;
+    },
+
+    deleteInfo: async (id: number | string): Promise<DeleteInfoResponse> => {
+        const response = await api.get(`admin/products/${id}/delete-info`);
+        return response.data?.data ?? response.data;
+    },
+
+    // --- SLUG / HELPERS ---
+    slugCheck: async (slug: string, productId?: number | string): Promise<SlugCheckResponse> => {
+        const response = await api.get('admin/products/slug-check', {
+            params: { slug, ...(productId ? { product_id: productId } : {}) },
+        });
+        return response.data?.data ?? response.data;
+    },
+
+    // --- VARIANTS ---
+    syncVariants: async (
+        productId: number | string,
+        variants: VariantInputPayload[]
+    ): Promise<{ data: any }> => {
+        const response = await api.post(`admin/products/${productId}/variants`, { variants });
+        return response.data;
+    },
+
+    destroyVariant: async (
+        productId: number | string,
+        variantId: number | string,
+        forceArchive = false
+    ) => {
+        const response = await api.delete(`admin/products/${productId}/variants/${variantId}`, {
+            params: forceArchive ? { force_archive: true } : {},
+        });
+        return response.data;
+    },
+
+    // --- LEGACY (ProductDiscountHistory sayfası için korunuyor — Sprint 32.2 dışı) ---
     getPriceHistory: async (id: number): Promise<any[]> => {
         try {
-        const response = await api.get<{ data: any[] }>(`/admin/product/${id}/price-history`);
-        return response.data.data;
+            const response = await api.get<{ data: any[] }>(
+                `/admin/product/${id}/price-history`
+            );
+            return response.data.data;
         } catch (error) {
-            console.error('Error changing product status:', error);
+            console.error('Error fetching price history:', error);
             throw error;
         }
     },
-    getGenders: async (): Promise<string[]> => {
-        const res = await api.get('/product/genders');
-        return res.data;
+
+    // --- BULK ---
+    bulkPriceUpdate: async (payload: BulkPriceUpdatePayload): Promise<{ count: number }> => {
+        const response = await api.post('admin/products/bulk-price-update', payload);
+        return response.data?.data ?? response.data;
     },
 };

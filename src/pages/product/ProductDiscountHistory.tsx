@@ -35,7 +35,7 @@ const ProductDiscountHistory = () => {
                 .catch(() => alert("Geçmiş verisi alınamadı"));
 
             ProductService.fetchById((id))
-                .then(res => setProduct(res.product))
+                .then((res: any) => setProduct(res?.product ?? res))
                 .catch(() => alert("Ürün bilgisi alınamadı"));
         }
     }, [id]);

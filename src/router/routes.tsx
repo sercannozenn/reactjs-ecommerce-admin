@@ -5,6 +5,8 @@ import TagAdd from '../pages/tag/TagAdd';
 import TagList from '../pages/tag/TagList';
 import ProductAdd from '../pages/product/ProductAdd';
 import ProductList from '../pages/product/ProductList';
+import ProductAttributeList from '../pages/product-attribute/ProductAttributeList';
+import ProductAttributeDetail from '../pages/product-attribute/ProductAttributeDetail';
 import BrandAdd from '../pages/brand/BrandAdd';
 import BrandList from '../pages/brand/BrandList';
 import SliderList from '../pages/slider/SliderList';
@@ -14,6 +16,7 @@ import AnnouncementList from '../pages/announcement/AnnouncementList';
 import SettingsAdd from '../pages/settings/SettingsAdd';
 import SettingsList from '../pages/settings/SettingsList';
 import SettingsGroupOrder from '../pages/settings/SettingsGroupOrder';
+import HomepageThemeSelector from '../pages/settings/HomepageThemeSelector';
 import ProductDiscountAdd from '../pages/product_discount/ProductDiscountAdd';
 import ProductDiscountList from '../pages/product_discount/ProductDiscountList';
 import ProductDiscountHistory from '../pages/product/ProductDiscountHistory';
@@ -147,6 +150,20 @@ const routes = [
         protected: true
     },
     {
+        path: '/urun-attribute',
+        name: 'ProductAttributeList',
+        element: <PermissionRoute permission="product_attribute.manage"><ProductAttributeList /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
+        path: '/urun-attribute/:id',
+        name: 'ProductAttributeDetail',
+        element: <PermissionRoute permission="product_attribute.manage"><ProductAttributeDetail /></PermissionRoute>,
+        layout: 'default',
+        protected: true
+    },
+    {
         path: '/slider/ekle',
         name: 'SliderAdd',
         element: <PermissionRoute permission="sliders.create"><SliderAdd /></PermissionRoute>,
@@ -215,6 +232,13 @@ const routes = [
         element: <PermissionRoute permission="settings.update"><SettingsAdd /></PermissionRoute>,
         layout: 'default',
         protected: true
+    },
+    {
+        path: '/ayarlar/anasayfa-temasi',
+        name: 'HomepageThemeSelector',
+        element: <PermissionRoute permission="settings.update"><HomepageThemeSelector /></PermissionRoute>,
+        layout: 'default',
+        protected: true,
     },
     {
         path: '/urun-indirim',
