@@ -95,6 +95,9 @@ const FileField: React.FC<FileFieldProps> = ({ setting, onFileChange, pendingFil
     );
 };
 
+// "homepage_theme" ayarı bu listede göstermiyoruz; ayrı bir sayfa (HomepageThemeSelector)
+// tile picker deneyimiyle yönetiyor. Filtre SettingsList render bloğunda uygulanıyor.
+
 // ------- Description inline edit -------
 
 interface DescriptionFieldProps {
@@ -442,7 +445,9 @@ const SettingsList = () => {
             {/* Accordion gruplar */}
             {!loading && groups.map((group) => {
                 const isOpen = openGroups.has(group.group);
-                const hasDirty = group.settings.some((s) => s.id! in dirtyValues || s.id! in dirtyFiles);
+                // homepage_theme ayrı sayfada yönetiliyor; bu listede gizli.
+                const visibleSettings = group.settings.filter((s) => s.key !== 'homepage_theme');
+                const hasDirty = visibleSettings.some((s) => s.id! in dirtyValues || s.id! in dirtyFiles);
 
                 return (
                     <div key={group.group} className="panel overflow-hidden">
@@ -457,7 +462,7 @@ const SettingsList = () => {
                                     {groupLabel(group.group)}
                                 </h6>
                                 <span className="text-xs text-gray-400 dark:text-gray-500">
-                                    {group.settings.length} ayar
+                                    {visibleSettings.length} ayar
                                 </span>
                                 {hasDirty && (
                                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-warning/20 text-warning">
@@ -473,8 +478,28 @@ const SettingsList = () => {
                         {/* Accordion içerik */}
                         {isOpen && (
                             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                {/* site_identity grubu için özel yönlendirme: Anasayfa Teması */}
+                                {group.group === 'site_identity' && (
+                                    <div className="mb-4 flex items-center justify-between gap-3 p-3 rounded-md bg-primary/5 border border-primary/20 dark:bg-primary/10">
+                                        <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                                            <IconInfoCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary" />
+                                            <span>
+                                                <strong className="dark:text-white-light">Anasayfa Teması</strong> bu listede gösterilmez —
+                                                görsel tile picker ile seçmek için ayrı sayfayı kullanın.
+                                            </span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-primary btn-sm whitespace-nowrap"
+                                            onClick={() => navigateToRoute('HomepageThemeSelector')}
+                                        >
+                                            Tema Seçimi →
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                                    {group.settings.map((setting) => (
+                                    {visibleSettings.map((setting) => (
                                         <div key={setting.id} className="flex flex-col gap-1">
                                             {/* Label + sil butonu */}
                                             <div className="flex items-center justify-between">
